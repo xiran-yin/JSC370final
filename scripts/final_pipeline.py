@@ -728,7 +728,7 @@ def build_outputs(df: pd.DataFrame) -> None:
         secondary_y=True,
     )
     fig_int1.update_layout(
-        title="Interactive Figure 1: Delay Trend with Precipitation",
+        title="Figure 1: Delay Trend with Precipitation",
         template="plotly_white",
         legend={"orientation": "h", "y": 1.08},
         margin={"l": 50, "r": 50, "t": 70, "b": 40},
@@ -737,27 +737,41 @@ def build_outputs(df: pd.DataFrame) -> None:
     fig_int1.update_yaxes(title_text="Precipitation (mm)", secondary_y=True)
     fig_int1.write_html(OUTPUT_DIR / "viz1_timeseries.html", include_plotlyjs="cdn")
 
-    fig_int2 = px.histogram(
-        df,
-        x="total_delay_mins",
-        color="weather_type",
-        barmode="overlay",
-        opacity=0.65,
-        nbins=55,
-        category_orders={"weather_type": ["Clear", "Light Rain/Snow", "Heavy Rain/Snow"]},
-        color_discrete_map={
-            "Clear": COLORS["blue"],
-            "Light Rain/Snow": COLORS["teal"],
-            "Heavy Rain/Snow": COLORS["coral"],
-        },
-        title="Interactive Figure 2: Delay Histogram by Weather Category",
-        labels={"total_delay_mins": "Daily total delay (minutes)", "weather_type": "Weather"},
+    monthly_heat = (
+        df.assign(year=df["date"].dt.year, month=df["date"].dt.month)
+        .groupby(["year", "month"], as_index=False)
+        .agg(mean_delay_mins=("total_delay_mins", "mean"))
     )
-    fig_int2.update_layout(template="plotly_white", margin={"l": 40, "r": 20, "t": 70, "b": 40})
-    fig_int2.write_html(OUTPUT_DIR / "viz2_histogram.html", include_plotlyjs="cdn")
+    heat = (
+        monthly_heat.pivot(index="year", columns="month", values="mean_delay_mins")
+        .reindex(columns=list(range(1, 13)))
+        .sort_index()
+    )
+    month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+    fig_int2 = go.Figure(
+        data=go.Heatmap(
+            z=heat.values,
+            x=month_labels,
+            y=heat.index.astype(str),
+            colorscale="YlGnBu",
+            colorbar={"title": "Mean delay (min)"},
+            hovertemplate="Year %{y}<br>Month %{x}<br>Mean delay %{z:.1f} min<extra></extra>",
+        )
+    )
+    fig_int2.update_layout(
+        title="Figure 2: Monthly Mean Daily Delay (Year × Month)",
+        template="plotly_white",
+        xaxis_title="Month",
+        yaxis_title="Year",
+        margin={"l": 60, "r": 25, "t": 70, "b": 50},
+    )
+    fig_int2.write_html(OUTPUT_DIR / "viz2_heatmap.html", include_plotlyjs="cdn")
+
+    # For boxplot comparability, exclude days with zero incidents.
+    box_df = df.loc[df["total_incidents"] > 0].copy()
     fig_int3 = px.box(
-        df,
+        box_df,
         x="weather_type",
         y="total_delay_mins",
         color="day_type",
@@ -767,7 +781,7 @@ def build_outputs(df: pd.DataFrame) -> None:
         },
         color_discrete_map={"Weekday": COLORS["navy"], "Weekend": COLORS["orange"]},
         points=False,
-        title="Interactive Figure 3: Weekday vs Weekend Delay by Weather Type",
+        title="Figure 3: Weekday vs Weekend Delay by Weather Type (Incident Days)",
         labels={
             "weather_type": "Weather category",
             "total_delay_mins": "Daily total delay (minutes)",

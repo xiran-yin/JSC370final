@@ -112,6 +112,8 @@ The severe-day threshold is `{python} round(severe_threshold, 1)` minutes/day (7
 summary_table
 ```
 
+Model labels in this table are metric-specific: the best **regression** model is selected by lowest RMSE, while the best **classification** model is selected by highest ROC-AUC.
+
 ## Deliverables
 
 - [Read the full final report](report.html)

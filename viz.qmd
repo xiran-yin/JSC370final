@@ -7,35 +7,26 @@ format:
 
 This page contains three interactive visualizations built from the final project dataset, satisfying the Homework 5 requirement.
 
-## Figure 1 (Interactive)
+## Figure 1: Delay Trend with Precipitation
 
-**What this shows:** A daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay.  
-**Why it is useful:** It highlights whether delay peaks are isolated events or part of persistent weather-related patterns.  
-**How to read it:** Track blue daily values, then use the orange rolling line for medium-term trend; compare both against teal precipitation bars on the secondary axis.
+What this shows: a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. Why it is useful: it distinguishes isolated spikes from persistent weather-related delay patterns. How to read it: track the blue daily series, then the orange rolling trend, and compare both against teal precipitation bars on the secondary axis.
 
 <iframe src="outputs/viz1_timeseries.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
-**Caption.** Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.  
-**Summary.** Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked delay pressure rather than isolated anomalies.
+**Caption.** Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.
 
-## Figure 2 (Interactive)
+## Figure 2: Monthly Mean Daily Delay (Year x Month)
 
-**What this shows:** The full distribution of daily total delay minutes, stratified by weather category.  
-**Why it is useful:** It compares central tendency and tail risk across clear, light rain/snow, and heavy rain/snow days.  
-**How to read it:** Look for rightward shifts and thicker right tails; those indicate higher delay totals and more extreme days.
+What this shows: a heatmap of mean daily delay minutes by month and year. Why it is useful: it highlights longer-run seasonal structure and multi-year shifts that are harder to see in raw daily distributions. How to read it: scan darker cells for high-delay month-year combinations, then compare rows (year effects) versus columns (seasonal effects).
 
-<iframe src="outputs/viz2_histogram.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
+<iframe src="outputs/viz2_heatmap.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
-**Caption.** Histogram of daily total delays, colored by weather category.  
-**Summary.** Heavy rain/snow days shift the distribution toward larger delay totals and contribute disproportionately to the right tail.
+**Caption.** Monthly mean daily delay minutes arranged by year and month.
 
-## Figure 3 (Interactive)
+## Figure 3: Weekday vs Weekend Delay by Weather Type
 
-**What this shows:** A weekday-versus-weekend boxplot comparison of delay minutes within each weather category.  
-**Why it is useful:** It isolates whether day-type differences persist under similar weather conditions.  
-**How to read it:** Compare the median bars and interquartile ranges between weekday and weekend boxes inside each weather group.
+What this shows: a weekday-versus-weekend boxplot comparison within each weather category, using incident days only. Why it is useful: it isolates day-type differences without the mechanical pile-up of zero-incident days. How to read it: compare medians and interquartile ranges between weekday and weekend boxes within each weather group.
 
 <iframe src="outputs/viz3_boxplot.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
-**Caption.** Boxplot comparison of daily delay minutes across weather categories by weekday/weekend.  
-**Summary.** Weekdays consistently show higher delay distributions than weekends, and adverse weather amplifies this weekday effect.
+**Caption.** Boxplot comparison of daily delay minutes across weather categories by weekday/weekend (incident days only).

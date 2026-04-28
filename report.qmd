@@ -11,7 +11,7 @@ format:
     toc: false
     number-sections: true
     geometry: margin=1in
-    fontsize: 11pt
+    fontsize: 10pt
     colorlinks: true
 execute:
   echo: false
@@ -228,13 +228,16 @@ Together with the model comparison table, these results indicate a practical cla
 
 # Conclusions and Summary
 
-This final analysis provides a reproducible, model-driven answer to the weather-delay question:
+This final analysis provides a reproducible and policy-relevant answer to the weather-delay question. At the system level, the results indicate that weather is not just a background condition: it is an operational stressor that changes the distribution of delay minutes, reshapes risk by day type, and affects how reliably severe service days can be flagged in advance.
 
-1. Adverse weather, especially precipitation-heavy conditions, is strongly associated with increased TTC subway delay minutes.
-2. Engineered weather features deliver better predictive performance in non-linear models than in linear baselines.
-3. Severe-delay-day classification is feasible with practical ROC-AUC/F1 performance, supporting risk-oriented transit planning use cases.
+In a broader urban-mobility context, this matters because daily reliability compounds into access inequality. When adverse weather systematically shifts delay patterns upward, riders with fixed schedules, transfer-heavy commutes, or fewer travel alternatives absorb disproportionate costs. The practical implication is that weather-conditioned planning can be treated as a reliability equity tool, not only as a technical forecasting exercise.
 
-In the broader picture, these findings suggest value in weather-conditioned operations planning: pre-positioning maintenance teams, adjusting service buffers on high-risk days, and issuing rider-facing alerts earlier.
+## Hypothesis Assessment
+
+1. **RQ1 / H1_1 supported:** Higher precipitation and heavier weather categories are associated with higher daily delay minutes in both descriptive summaries and model behavior.
+2. **RQ2 / H1_2 supported:** Weekday delay levels remain higher than weekend levels, including within weather-stratified comparisons.
+3. **RQ3 / H1_3 partially supported:** Weather-engineered predictors provide measurable predictive signal, but gains over linear baselines are moderate rather than dramatic in this daily-resolution setting.
+4. **RQ4 / H1_4 supported (with caution):** Severe-day classification performs above near-random discrimination on held-out data, though effect size is modest and should be interpreted as risk ranking support rather than deterministic day-level prediction.
 
 ## Limitations
 
