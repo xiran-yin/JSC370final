@@ -11,7 +11,7 @@ format:
     toc: false
     number-sections: true
     geometry: margin=1in
-    fontsize: 10pt
+    fontsize: 11pt
     colorlinks: true
 execute:
   echo: false
@@ -50,9 +50,7 @@ best_cls_f1 = key["best_cls_f1"]
 
 # Introduction
 
-Public transit reliability is a daily quality-of-life issue in Toronto, especially when weather conditions deteriorate. The Toronto Transit Commission (TTC) carries more than one million riders per day, and even moderate delays can create wide social and economic costs through missed connections, longer commute times, and reduced service confidence.
-
-This project examines how weather conditions are associated with TTC subway delay minutes at the daily level. The analysis extends the midterm topic and narrows scope to the elements required for the final project: reproducible data acquisition, feature engineering, regression and classification modeling, and communication through publication-ready outputs plus interactive visualizations.
+Public transit reliability is a daily quality-of-life issue in Toronto. This project examines how weather conditions are associated with TTC subway delay minutes at the daily level using reproducible data acquisition, feature engineering, regression/classification modeling, and publication-ready outputs.
 
 The specific research questions are:
 
@@ -80,14 +78,14 @@ The hypotheses are specified in testable null/alternative form:
 
 ## Model Choice and Rationale
 
-The modeling strategy intentionally combines interpretable baselines with non-linear learners:
+The modeling strategy combines interpretable baselines with non-linear learners:
 
 1. **Linear Regression** and **Logistic Regression** provide transparent baseline relationships for continuous and binary outcomes.
 2. **Decision Tree** models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.
 3. **Random Forest** models reduce single-tree variance and generally improve out-of-sample stability.
 4. **XGBoost** adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.
 
-This structure directly tests whether non-linear weather effects materially improve held-out performance relative to linear baselines.
+This structure tests whether non-linear weather effects improve held-out performance relative to linear baselines.
 
 ## Data Sources
 
@@ -184,11 +182,11 @@ Model interpretation includes feature-importance diagnostics.
 
 ## Descriptive Patterns
 
-![Figure 1. Monthly aggregated TTC delay minutes (line) and monthly precipitation totals (bars). The long-run pattern shows repeated co-movement during wetter periods.](outputs/fig1_monthly_delay_precip.png){#fig-monthly width=82%}
+![Figure 1. Monthly aggregated TTC delay minutes (line) and monthly precipitation totals (bars). The long-run pattern shows repeated co-movement during wetter periods.](outputs/fig1_monthly_delay_precip.png){#fig-monthly width=74%}
 
 Figure 1 shows clear long-run co-movement between precipitation load and monthly delay minutes. While seasonality exists, delay peaks are not purely calendar-driven; they align with high precipitation periods.
 
-![Figure 2. Distribution of daily delay minutes by weather category. Heavy precipitation/snow days have a higher median and wider tail of extreme delays.](outputs/fig2_weather_boxplot.png){#fig-weather-box width=78%}
+![Figure 2. Distribution of daily delay minutes by weather category. Heavy precipitation/snow days have a higher median and wider tail of extreme delays.](outputs/fig2_weather_boxplot.png){#fig-weather-box width=70%}
 
 Figure 2 confirms monotonic separation across weather severity categories: heavier weather conditions correspond to higher median delay and greater spread.
 
@@ -198,7 +196,7 @@ Figure 2 confirms monotonic separation across weather severity categories: heavi
 tbl_weather
 ```
 
-Table 1 quantifies this visual pattern. Heavy weather days have the highest average and median delay minutes, supporting the first hypothesis.
+Table 1 quantifies this pattern. Heavy weather days have the highest average and median delay minutes, supporting the first hypothesis.
 
 ## Regression Performance
 
@@ -208,11 +206,9 @@ Table 1 quantifies this visual pattern. Heavy weather days have the highest aver
 tbl_reg.round(4)
 ```
 
-`{python} best_reg_model` is the best-performing regression model on RMSE, with RMSE `{python} round(best_reg_rmse, 2)` and R² `{python} round(best_reg_r2, 3)`. This indicates materially better predictive fit than a purely linear specification.
+`{python} best_reg_model` is the best-performing regression model on RMSE, with RMSE `{python} round(best_reg_rmse, 2)` and R² `{python} round(best_reg_r2, 3)`.
 
-![Figure 3. Top predictor importance from the best tree-based regression model.](outputs/fig4_feature_importance.png){#fig-importance width=72%}
-
-Feature importance results emphasize precipitation-related variables, along with wind and temperature. This aligns with operational intuition that extreme moisture and wind conditions increase infrastructure stress and service disruption risk.
+Feature-importance outputs (website figure/table) emphasize precipitation-related variables, along with wind and temperature.
 
 ## Severe-Delay Classification
 
@@ -222,15 +218,13 @@ Feature importance results emphasize precipitation-related variables, along with
 tbl_cls.round(4)
 ```
 
-`{python} best_cls_model` achieves the best discrimination with ROC-AUC `{python} round(best_cls_auc, 3)` and F1 `{python} round(best_cls_f1, 3)`, indicating meaningful classification performance on the severe-day task.
-
-Together with the model comparison table, these results indicate a practical classification signal for identifying weather-linked high-risk service days.
+`{python} best_cls_model` achieves the highest ROC-AUC (`{python} round(best_cls_auc, 3)`) with F1 `{python} round(best_cls_f1, 3)`. Together with Table 3, this indicates usable but moderate severe-day discrimination.
 
 # Conclusions and Summary
 
-This final analysis provides a reproducible and policy-relevant answer to the weather-delay question. At the system level, the results indicate that weather is not just a background condition: it is an operational stressor that changes the distribution of delay minutes, reshapes risk by day type, and affects how reliably severe service days can be flagged in advance.
+This final analysis provides a reproducible and policy-relevant answer to the weather-delay question. Weather is not only a background condition; it acts as an operational stressor that shifts delay distributions, changes day-type risk patterns, and affects how well severe service days can be identified in advance.
 
-In a broader urban-mobility context, this matters because daily reliability compounds into access inequality. When adverse weather systematically shifts delay patterns upward, riders with fixed schedules, transfer-heavy commutes, or fewer travel alternatives absorb disproportionate costs. The practical implication is that weather-conditioned planning can be treated as a reliability equity tool, not only as a technical forecasting exercise.
+In a broader urban-mobility context, this matters because reliability shocks are unevenly distributed. Riders with fixed schedules, transfer-heavy commutes, or fewer alternatives absorb disproportionate costs when delay risk rises. Weather-conditioned operations planning can therefore be interpreted as a reliability equity tool, not only as a technical forecasting task.
 
 ## Hypothesis Assessment
 
@@ -241,10 +235,8 @@ In a broader urban-mobility context, this matters because daily reliability comp
 
 ## Limitations
 
-- Daily-level aggregation can hide intra-day dynamics (e.g., rush-hour clustering).
-- Historical TTC files are heterogeneous and require robust but imperfect column harmonization.
-- Station-level geospatial analysis is only partially supported by fields available across all years.
-- Causal interpretation is limited; the models are predictive/associational rather than causal.
-- Severe-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs.
+- Daily aggregation can hide intra-day dynamics (especially rush-hour clustering).
+- Historical TTC files are heterogeneous, so column harmonization is robust but imperfect.
+- Results are predictive/associational rather than causal, and severe-day classification depends on the percentile cutoff.
 
 For interactive exploration of the same dataset, see the **Interactive Visualizations** page on the project website.
