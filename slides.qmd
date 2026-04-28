@@ -1,0 +1,122 @@
+---
+title: "JSC370 Final Project"
+subtitle: "Impact of Weather on TTC Subway Delays"
+author: "Xiran Yin"
+format:
+  revealjs:
+    theme:
+      - default
+      - styles/slides-classic.scss
+    slide-number: true
+    transition: fade
+    controls-layout: bottom-right
+    footer: "JSC370 Final Project | Xiran Yin"
+    embed-resources: true
+    code-overflow: wrap
+---
+
+# Research Focus
+
+## Question
+
+How strongly do adverse weather conditions explain day-level TTC subway delay burden in Toronto?
+
+## Goals
+
+- Build a reproducible API-based dataset (2014-2026)
+- Compare regression and classification models
+- Identify top weather predictors of severe-delay days
+- Deliver interactive results for exploration
+
+::: notes
+Open with motivation: transit reliability affects daily quality of life.
+Define severe day as top quartile of delay minutes.
+:::
+
+---
+
+# Data and Pipeline
+
+- **Weather API:** Open-Meteo daily archive
+- **Transit API:** Toronto Open Data CKAN (`ttc-subway-delay-data`)
+- Multi-file TTC ingestion with robust column harmonization
+- Daily-level merge and engineered weather features
+- Reproducible pipeline: `scripts/final_pipeline.py`
+
+::: notes
+Mention flexible parsing across historical TTC files and no hard-coded local paths.
+:::
+
+---
+
+# Core Features
+
+- Precipitation (`precip_mm`)
+- Snowfall (`snowfall_cm`)
+- Wind gust speed (`gust_speed`)
+- Mean temperature (`mean_temp_c`)
+- Precipitation intensity (`precip_intensity`)
+- Weekend indicator and month seasonality
+
+**Classification target:** Severe-delay day = top 25% of daily delay totals.
+
+::: notes
+Connect features to operational mechanisms: moisture, wind, and temperature stress.
+:::
+
+---
+
+# Descriptive Signal
+
+![](outputs/fig1_monthly_delay_precip.png){width=92%}
+
+Delay burden and precipitation co-move at monthly scale across the study period.
+
+---
+
+# Weather Severity Effect
+
+![](outputs/fig2_weather_boxplot.png){width=76%}
+
+Heavy rain/snow days show higher median delay and wider extreme tail.
+
+---
+
+# Modeling Results
+
+## Regression
+- Baseline: Linear Regression
+- Main model: Random Forest Regressor
+
+## Classification
+- Baseline: Logistic Regression
+- Main model: Random Forest Classifier
+
+![](outputs/fig4_feature_importance.png){width=64%}
+
+Precipitation and weather-stress variables dominate predictive importance.
+
+---
+
+# Severe-Day Classification
+
+![](outputs/fig5_roc_curve.png){width=62%}
+![](outputs/fig6_confusion_matrix.png){width=34%}
+
+Random Forest improves discrimination and keeps balanced detection under class imbalance.
+
+---
+
+# Conclusion
+
+- Weather is a strong and consistent predictor of TTC daily delay burden.
+- Non-linear ML models outperform linear baselines on both tasks.
+- Severe-delay-day prediction is feasible for operational early-warning use.
+- Interactive visuals and full reproducible pipeline are published on the project website.
+
+## Thank you
+
+Project pages:
+- Report (`report.html` / `report.pdf`)
+- Interactive visuals (`viz.html`)
+- Code + pipeline (`scripts/final_pipeline.py`)

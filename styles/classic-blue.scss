@@ -1,0 +1,55 @@
+/*-- scss:defaults --*/
+$body-bg: #f7f9fc;
+$body-color: #223046;
+$link-color: #1f4e79;
+$primary: #1f4e79;
+$secondary: #436a94;
+$font-family-sans-serif: "Georgia", "Times New Roman", "Times", serif;
+$headings-font-family: "Georgia", "Times New Roman", "Times", serif;
+$headings-color: #163d64;
+$navbar-bg: #0f365d;
+$navbar-fg: #e8eff7;
+$navbar-hl: #ffffff;
+
+/*-- scss:rules --*/
+body {
+  letter-spacing: 0;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.navbar {
+  border-bottom: 1px solid #30547b;
+}
+
+.quarto-title-block .quarto-title-banner {
+  background: linear-gradient(180deg, #173d64 0%, #355e89 100%);
+  color: #f4f8fd;
+}
+
+.table {
+  background: #ffffff;
+  border: 1px solid #d3dfec;
+}
+
+.table thead th {
+  background: #e8f0f8;
+  color: #173d64;
+}
+
+figure {
+  background: #ffffff;
+  padding: 12px;
+  border: 1px solid #d3dfec;
+  border-radius: 6px;
+}
+
+.callout {
+  border-left: 4px solid #3d6a97;
+}

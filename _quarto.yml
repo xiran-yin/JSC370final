@@ -1,0 +1,42 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - report.qmd
+    - viz.qmd
+    - slides.qmd
+
+website:
+  title: "JSC370 Final Project"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: report.qmd
+        text: Final Report
+      - href: viz.qmd
+        text: Interactive Visualizations
+      - href: slides.qmd
+        text: Presentation Slides
+    right:
+      - text: GitHub Repo
+        href: https://github.com/your-username/JSC370-finalproject
+  page-footer:
+    center: "JSC370 Final Project | Reproducible Data Science"
+
+format:
+  html:
+    theme:
+      - cosmo
+      - styles/classic-blue.scss
+    toc: true
+    number-sections: true
+    smooth-scroll: true
+    embed-resources: true
+    code-fold: false
+
+execute:
+  echo: false
+  warning: false
+  message: false

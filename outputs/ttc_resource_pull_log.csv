@@ -1,0 +1,16 @@
+resource,status
+ttc-subway-delay-codes,skipped: missing usable date/delay columns
+ttc-subway-delay-data-readme,skipped: missing usable date/delay columns
+ttc-subway-delay-jan-2014-april-2017,"ok (69,014 rows)"
+ttc-subway-delay-may-december-2017,"ok (1,634 rows)"
+ttc-subway-delay-data-2018,"ok (1,873 rows)"
+ttc-subway-delay-data-2019,"ok (1,871 rows)"
+ttc-subway-delay-data-2020,"ok (1,339 rows)"
+ttc-subway-delay-data-2021,"ok (1,216 rows)"
+ttc-subway-delay-data-2022,"ok (19,895 rows)"
+ttc-subway-delay-data-2023,"ok (22,949 rows)"
+ttc-subway-delay-data-2024,"ok (26,465 rows)"
+TTC Subway Delay Data since 2025,"failed: Excel file format cannot be determined, you must specify an engine manually."
+TTC Subway Delay Data since 2025.csv,"ok (28,185 rows)"
+Code Descriptions,"failed: Excel file format cannot be determined, you must specify an engine manually."
+Code Descriptions.csv,skipped: missing usable date/delay columns

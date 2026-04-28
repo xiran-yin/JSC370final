@@ -1,0 +1,12 @@
+{
+  "n_days": 2863,
+  "start_date": "2014-01-01",
+  "end_date": "2026-01-31",
+  "severe_threshold": 193.0,
+  "best_reg_model": "Random Forest Regressor",
+  "best_reg_rmse": 95.51401904178736,
+  "best_reg_r2": 0.09159336555837805,
+  "best_cls_model": "Random Forest Classifier",
+  "best_cls_auc": 0.6221341717271776,
+  "best_cls_f1": 0.3612565445026178
+}

@@ -1,0 +1,36 @@
+/*-- scss:defaults --*/
+$body-bg: #f6f8fb;
+$body-color: #1f2f46;
+$presentation-heading-color: #163d64;
+$font-family-sans-serif: "Georgia", "Times New Roman", "Times", serif;
+$presentation-font-size-root: 34px;
+$presentation-h1-font-size: 2em;
+$presentation-h2-font-size: 1.35em;
+$presentation-h3-font-size: 1.05em;
+$link-color: #1f4e79;
+
+/*-- scss:rules --*/
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slide-number {
+  color: #173d64;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  letter-spacing: 0;
+}
+
+.reveal section img {
+  border: 1px solid #ccd9e8;
+  box-shadow: none;
+}
+
+.reveal blockquote {
+  border-left: 4px solid #5c84af;
+  background: #ebf2f9;
+  width: 100%;
+}

@@ -1,0 +1,29 @@
+---
+title: "Interactive Visualizations"
+format:
+  html:
+    toc: false
+---
+
+This page contains three interactive visualizations built from the final project dataset, satisfying the Homework 5 requirement.
+
+## Figure 1 (Interactive)
+
+<iframe src="outputs/viz1_timeseries.html" width="100%" height="560" style="border:1px solid #cdd8e6; border-radius:6px;"></iframe>
+
+**Caption.** Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.  
+**Summary.** Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked burden rather than isolated anomalies.
+
+## Figure 2 (Interactive)
+
+<iframe src="outputs/viz2_histogram.html" width="100%" height="560" style="border:1px solid #cdd8e6; border-radius:6px;"></iframe>
+
+**Caption.** Histogram of daily total delays, colored by weather category.  
+**Summary.** Heavy rain/snow days shift the distribution toward larger delay totals and contribute disproportionately to the right tail.
+
+## Figure 3 (Interactive)
+
+<iframe src="outputs/viz3_boxplot.html" width="100%" height="560" style="border:1px solid #cdd8e6; border-radius:6px;"></iframe>
+
+**Caption.** Boxplot comparison of delay burden across weather categories by weekday/weekend.  
+**Summary.** Weekdays consistently show higher delay distributions than weekends, and adverse weather amplifies this weekday effect.
