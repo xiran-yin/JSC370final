@@ -91,11 +91,18 @@
     "text": "3.3 Severe-Delay Classification\n\n\n\n\nTable 3: Classification model comparison for severe-delay-day detection.\n\n\n\n\n\n\n\n\n\n\nmodel\naccuracy\nprecision\nrecall\nf1\nroc_auc\n\n\n\n\n0\nLogistic Regression\n0.5872\n0.3199\n0.5706\n0.4099\n0.6136\n\n\n1\nXGBoost Classifier\n0.7396\n0.4333\n0.1171\n0.1844\n0.5985\n\n\n2\nRandom Forest Classifier\n0.6891\n0.3643\n0.3183\n0.3397\n0.5976\n\n\n3\nDecision Tree Classifier\n0.5125\n0.2954\n0.6787\n0.4117\n0.5831\n\n\n\n\n\n\n\n\n\n\nLogistic Regression achieves the best discrimination with ROC-AUC 0.614 and F1 0.41, indicating meaningful classification performance on the severe-day task.\nTogether with the model comparison table, these results indicate a practical classification signal for identifying weather-linked high-risk service days."
   },
   {
+    "objectID": "report.html#hypothesis-assessment",
+    "href": "report.html#hypothesis-assessment",
+    "title": "JSC370 Final Project Report",
+    "section": "4.1 Hypothesis Assessment",
+    "text": "4.1 Hypothesis Assessment\n\nRQ1 / H1_1 supported: Higher precipitation and heavier weather categories are associated with higher daily delay minutes in both descriptive summaries and model behavior.\nRQ2 / H1_2 supported: Weekday delay levels remain higher than weekend levels, including within weather-stratified comparisons.\nRQ3 / H1_3 partially supported: Weather-engineered predictors provide measurable predictive signal, but gains over linear baselines are moderate rather than dramatic in this daily-resolution setting.\nRQ4 / H1_4 supported (with caution): Severe-day classification performs above near-random discrimination on held-out data, though effect size is modest and should be interpreted as risk ranking support rather than deterministic day-level prediction."
+  },
+  {
     "objectID": "report.html#limitations",
     "href": "report.html#limitations",
     "title": "JSC370 Final Project Report",
-    "section": "4.1 Limitations",
-    "text": "4.1 Limitations\n\nDaily-level aggregation can hide intra-day dynamics (e.g., rush-hour clustering).\nHistorical TTC files are heterogeneous and require robust but imperfect column harmonization.\nStation-level geospatial analysis is only partially supported by fields available across all years.\nCausal interpretation is limited; the models are predictive/associational rather than causal.\nSevere-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs.\n\nFor interactive exploration of the same dataset, see the Interactive Visualizations page on the project website."
+    "section": "4.2 Limitations",
+    "text": "4.2 Limitations\n\nDaily-level aggregation can hide intra-day dynamics (e.g., rush-hour clustering).\nHistorical TTC files are heterogeneous and require robust but imperfect column harmonization.\nStation-level geospatial analysis is only partially supported by fields available across all years.\nCausal interpretation is limited; the models are predictive/associational rather than causal.\nSevere-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs.\n\nFor interactive exploration of the same dataset, see the Interactive Visualizations page on the project website."
   },
   {
     "objectID": "index.html",
@@ -123,7 +130,7 @@
     "href": "index.html#final-results-snapshot",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
     "section": "3 Final Results Snapshot",
-    "text": "3 Final Results Snapshot\n\n\n\n\nTable 1: Final project summary metrics.\n\n\n\n\n\n\n\n\n\n\nMetric\nValue\n\n\n\n\n0\nAnalysis window\n2014-01-01 to 2026-01-31\n\n\n1\nCalendar days in analysis\n4414\n\n\n2\nDays with recorded incidents\n2863\n\n\n3\nDays with zero recorded incidents\n1551\n\n\n4\nHeavy vs clear delay ratio\n1.22x\n\n\n5\nPrecipitation-delay correlation\nr = 0.053\n\n\n6\nBest regression model (RMSE)\nRandom Forest Regressor (105.39)\n\n\n7\nBest classification model (ROC-AUC)\nLogistic Regression (0.614)\n\n\n8\nSevere-day threshold\n157.0 min/day (75th percentile)\n\n\n9\nSevere-day share\n25.1%"
+    "text": "3 Final Results Snapshot\n\n\n\n\nTable 1: Final project summary metrics.\n\n\n\n\n\n\n\n\n\n\nMetric\nValue\n\n\n\n\n0\nAnalysis window\n2014-01-01 to 2026-01-31\n\n\n1\nCalendar days in analysis\n4414\n\n\n2\nDays with recorded incidents\n2863\n\n\n3\nDays with zero recorded incidents\n1551\n\n\n4\nHeavy vs clear delay ratio\n1.22x\n\n\n5\nPrecipitation-delay correlation\nr = 0.053\n\n\n6\nBest regression model (RMSE)\nRandom Forest Regressor (105.39)\n\n\n7\nBest classification model (ROC-AUC)\nLogistic Regression (0.614)\n\n\n8\nSevere-day threshold\n157.0 min/day (75th percentile)\n\n\n9\nSevere-day share\n25.1%\n\n\n\n\n\n\n\n\n\n\nModel labels in this table are metric-specific: the best regression model is selected by lowest RMSE, while the best classification model is selected by highest ROC-AUC."
   },
   {
     "objectID": "index.html#deliverables",
@@ -154,24 +161,24 @@
     "text": "This page contains three interactive visualizations built from the final project dataset, satisfying the Homework 5 requirement."
   },
   {
-    "objectID": "viz.html#figure-1-interactive",
-    "href": "viz.html#figure-1-interactive",
+    "objectID": "viz.html#figure-1-delay-trend-with-precipitation",
+    "href": "viz.html#figure-1-delay-trend-with-precipitation",
     "title": "Interactive Visualizations",
-    "section": "1 Figure 1 (Interactive)",
-    "text": "1 Figure 1 (Interactive)\nWhat this shows: A daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay.\nWhy it is useful: It highlights whether delay peaks are isolated events or part of persistent weather-related patterns.\nHow to read it: Track blue daily values, then use the orange rolling line for medium-term trend; compare both against teal precipitation bars on the secondary axis.\n\n\nCaption. Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.\nSummary. Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked delay pressure rather than isolated anomalies."
+    "section": "1 Figure 1: Delay Trend with Precipitation",
+    "text": "1 Figure 1: Delay Trend with Precipitation\nWhat this shows: a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. Why it is useful: it distinguishes isolated spikes from persistent weather-related delay patterns. How to read it: track the blue daily series, then the orange rolling trend, and compare both against teal precipitation bars on the secondary axis.\n\n\nCaption. Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay."
   },
   {
-    "objectID": "viz.html#figure-2-interactive",
-    "href": "viz.html#figure-2-interactive",
+    "objectID": "viz.html#figure-2-monthly-mean-daily-delay-year-x-month",
+    "href": "viz.html#figure-2-monthly-mean-daily-delay-year-x-month",
     "title": "Interactive Visualizations",
-    "section": "2 Figure 2 (Interactive)",
-    "text": "2 Figure 2 (Interactive)\nWhat this shows: The full distribution of daily total delay minutes, stratified by weather category.\nWhy it is useful: It compares central tendency and tail risk across clear, light rain/snow, and heavy rain/snow days.\nHow to read it: Look for rightward shifts and thicker right tails; those indicate higher delay totals and more extreme days.\n\n\nCaption. Histogram of daily total delays, colored by weather category.\nSummary. Heavy rain/snow days shift the distribution toward larger delay totals and contribute disproportionately to the right tail."
+    "section": "2 Figure 2: Monthly Mean Daily Delay (Year x Month)",
+    "text": "2 Figure 2: Monthly Mean Daily Delay (Year x Month)\nWhat this shows: a heatmap of mean daily delay minutes by month and year. Why it is useful: it highlights longer-run seasonal structure and multi-year shifts that are harder to see in raw daily distributions. How to read it: scan darker cells for high-delay month-year combinations, then compare rows (year effects) versus columns (seasonal effects).\n\n\nCaption. Monthly mean daily delay minutes arranged by year and month."
   },
   {
-    "objectID": "viz.html#figure-3-interactive",
-    "href": "viz.html#figure-3-interactive",
+    "objectID": "viz.html#figure-3-weekday-vs-weekend-delay-by-weather-type",
+    "href": "viz.html#figure-3-weekday-vs-weekend-delay-by-weather-type",
     "title": "Interactive Visualizations",
-    "section": "3 Figure 3 (Interactive)",
-    "text": "3 Figure 3 (Interactive)\nWhat this shows: A weekday-versus-weekend boxplot comparison of delay minutes within each weather category.\nWhy it is useful: It isolates whether day-type differences persist under similar weather conditions.\nHow to read it: Compare the median bars and interquartile ranges between weekday and weekend boxes inside each weather group.\n\n\nCaption. Boxplot comparison of daily delay minutes across weather categories by weekday/weekend.\nSummary. Weekdays consistently show higher delay distributions than weekends, and adverse weather amplifies this weekday effect."
+    "section": "3 Figure 3: Weekday vs Weekend Delay by Weather Type",
+    "text": "3 Figure 3: Weekday vs Weekend Delay by Weather Type\nWhat this shows: a weekday-versus-weekend boxplot comparison within each weather category, using incident days only. Why it is useful: it isolates day-type differences without the mechanical pile-up of zero-incident days. How to read it: compare medians and interquartile ranges between weekday and weekend boxes within each weather group.\n\n\nCaption. Boxplot comparison of daily delay minutes across weather categories by weekday/weekend (incident days only)."
   }
 ]
