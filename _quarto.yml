@@ -21,7 +21,7 @@ website:
         text: Presentation Slides
     right:
       - text: GitHub Repo
-        href: https://github.com/your-username/JSC370-finalproject
+        href: https://github.com/xiran-yin/JSC370final
   page-footer:
     center: "JSC370 Final Project | Reproducible Data Science"
 

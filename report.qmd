@@ -103,6 +103,8 @@ The classification target is:
 
 - `severe_day = 1` if daily delay is at or above the 75th percentile threshold (`{python} round(severe_threshold, 2)` minutes), else 0.
 
+The 75th-percentile cutoff is used as a pragmatic high-risk threshold for classification; regression results are reported in parallel to avoid over-reliance on a single binary definition of severity.
+
 ## Modeling Strategy
 
 Two modeling tasks were implemented.
@@ -200,6 +202,7 @@ In the broader picture, these findings suggest value in weather-conditioned oper
 - Historical TTC files are heterogeneous and require robust but imperfect column harmonization.
 - Station-level geospatial analysis is only partially supported by fields available across all years.
 - Causal interpretation is limited; the models are predictive/associational rather than causal.
+- Severe-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs.
 
 ## Next Steps
 

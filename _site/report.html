@@ -3885,7 +3885,7 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="https://github.com/your-username/JSC370-finalproject"> 
+    <a class="nav-link" href="https://github.com/xiran-yin/JSC370final"> 
 <span class="menu-text">GitHub Repo</span></a>
   </li>  
 </ul>
@@ -4018,6 +4018,7 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 <ul>
 <li><code>severe_day = 1</code> if daily delay is at or above the 75th percentile threshold (193.0 minutes), else 0.</li>
 </ul>
+<p>The 75th-percentile cutoff is used as a pragmatic high-risk threshold for classification; regression results are reported in parallel to avoid over-reliance on a single binary definition of severity.</p>
 </section>
 <section id="modeling-strategy" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="modeling-strategy"><span class="header-section-number">2.3</span> Modeling Strategy</h2>
@@ -4340,6 +4341,7 @@ Figure 4: Figure 4. ROC curves for severe-delay-day classification.
 <li>Historical TTC files are heterogeneous and require robust but imperfect column harmonization.</li>
 <li>Station-level geospatial analysis is only partially supported by fields available across all years.</li>
 <li>Causal interpretation is limited; the models are predictive/associational rather than causal.</li>
+<li>Severe-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs.</li>
 </ul>
 </section>
 <section id="next-steps" class="level2" data-number="4.2">

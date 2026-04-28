@@ -8,11 +8,12 @@ This repository contains the full final project deliverables:
 - 5-minute presentation slides
 - Reproducible data and modeling pipeline
 
+Scope note: the final version excludes the NLP/reddit sentiment component and focuses on weather-driven TTC delay modeling, aligned with midterm rubric feedback.
+
 ## Website
 
-Replace the link below after GitHub Pages deployment:
-
-- https://your-username.github.io/JSC370-finalproject
+- Repo: https://github.com/xiran-yin/JSC370final
+- GitHub Pages site: https://xiran-yin.github.io/JSC370final/
 
 ## Data Sources
 
