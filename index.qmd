@@ -3,16 +3,105 @@ title: "JSC370 Final Project: Weather and TTC Subway Delays"
 format:
   html:
     toc: false
+jupyter: python3
 ---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+
+root = Path(".")
+key = json.loads((root / "outputs" / "key_numbers.json").read_text(encoding="utf-8"))
+tbl_reg = pd.read_csv(root / "outputs" / "table_regression_metrics.csv")
+tbl_cls = pd.read_csv(root / "outputs" / "table_classification_metrics.csv")
+
+def m(tbl, model, col):
+    hit = tbl.loc[tbl["model"] == model, col]
+    return float(hit.iloc[0]) if len(hit) else float("nan")
+
+heavy_clear_ratio = key["heavy_vs_clear_ratio"]
+precip_corr = key["precip_delay_corr"]
+weekday_weekend_ratio = key["weekday_mean_delay"] / key["weekend_mean_delay"]
+severe_threshold = key["severe_threshold"]
+severe_rate = key["severe_rate"] * 100
+
+lr_rmse = m(tbl_reg, "Linear Regression", "rmse")
+dt_rmse = m(tbl_reg, "Decision Tree Regressor", "rmse")
+rf_rmse = m(tbl_reg, "Random Forest Regressor", "rmse")
+xgb_rmse = m(tbl_reg, "XGBoost Regressor", "rmse")
+
+logit_auc = m(tbl_cls, "Logistic Regression", "roc_auc")
+dt_auc = m(tbl_cls, "Decision Tree Classifier", "roc_auc")
+rf_auc = m(tbl_cls, "Random Forest Classifier", "roc_auc")
+xgb_auc = m(tbl_cls, "XGBoost Classifier", "roc_auc")
+
+summary_table = pd.DataFrame(
+    {
+        "Metric": [
+            "Analysis window",
+            "Heavy vs clear delay ratio",
+            "Precipitation-delay correlation",
+            "Best regression model (RMSE)",
+            "Best classification model (ROC-AUC)",
+            "Severe-day threshold",
+            "Severe-day share",
+        ],
+        "Value": [
+            f'{key["start_date"]} to {key["end_date"]}',
+            f"{heavy_clear_ratio:.2f}x",
+            f"r = {precip_corr:.3f}",
+            f'{key["best_reg_model"]} ({key["best_reg_rmse"]:.2f})',
+            f'{key["best_cls_model"]} ({key["best_cls_auc"]:.3f})',
+            f"{severe_threshold:.1f} min/day (75th percentile)",
+            f"{severe_rate:.1f}%",
+        ],
+    }
+)
+```
 
 ## Project Summary
 
-This project studies how Toronto weather conditions influence TTC subway delay burden from 2014 to 2026. I merge Open-Meteo daily weather data with TTC incident-level delay records from Toronto Open Data, then evaluate both:
+This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:
 
 - **Regression models** for predicting total daily delay minutes.
 - **Classification models** for identifying high-risk severe-delay days.
 
 The analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures.
+
+## Key Findings
+
+:::: {.kpi-grid}
+::: {.kpi-card}
+### Weather Severity
+Heavy rain/snow days show about `{python} round(heavy_clear_ratio, 2)`x the average delay of clear days.  
+The precipitation-delay correlation is r = `{python} round(precip_corr, 3)`.
+:::
+
+::: {.kpi-card}
+### Day-Type Gap
+Weekday average delay minutes are `{python} round(weekday_weekend_ratio, 2)`x weekend levels.
+:::
+
+::: {.kpi-card}
+### Model Comparison
+Regression RMSE: Linear `{python} round(lr_rmse, 2)`, Decision Tree `{python} round(dt_rmse, 2)`, Random Forest `{python} round(rf_rmse, 2)`, XGBoost `{python} round(xgb_rmse, 2)`.  
+Classification ROC-AUC: Logistic `{python} round(logit_auc, 3)`, Decision Tree `{python} round(dt_auc, 3)`, Random Forest `{python} round(rf_auc, 3)`, XGBoost `{python} round(xgb_auc, 3)`.
+:::
+
+::: {.kpi-card}
+### Risk Threshold
+The severe-day threshold is `{python} round(severe_threshold, 1)` minutes/day (75th percentile), flagging `{python} round(severe_rate, 1)`% of days.
+:::
+::::
+
+## Final Results Snapshot
+
+```{python}
+#| label: tbl-index-summary
+#| tbl-cap: "Final project summary metrics."
+summary_table
+```
 
 ## Deliverables
 

@@ -33,6 +33,12 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
+try:
+    from xgboost import XGBClassifier, XGBRegressor
+except Exception as exc:  # noqa: BLE001
+    raise RuntimeError("xgboost is required for this project pipeline.") from exc
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -61,6 +67,17 @@ plt.rcParams.update(
         "axes.labelsize": 11,
     }
 )
+
+COLORS = {
+    "navy": "#1f4e79",
+    "blue": "#3b82b5",
+    "teal": "#5aa89e",
+    "orange": "#d9903d",
+    "coral": "#cf7657",
+    "purple": "#7a6fa9",
+    "gray": "#98a3b3",
+    "light_grid": "#d9e3ef",
+}
 
 
 WEATHER_START = "2014-01-01"
@@ -318,6 +335,11 @@ def build_outputs(df: pd.DataFrame) -> None:
     )
 
     lr = LinearRegression()
+    dt_reg = DecisionTreeRegressor(
+        max_depth=7,
+        min_samples_leaf=8,
+        random_state=RANDOM_STATE,
+    )
     rf_reg = RandomForestRegressor(
         n_estimators=700,
         max_depth=12,
@@ -325,24 +347,62 @@ def build_outputs(df: pd.DataFrame) -> None:
         random_state=RANDOM_STATE,
         n_jobs=-1,
     )
+    xgb_reg = XGBRegressor(
+        n_estimators=400,
+        max_depth=3,
+        learning_rate=0.05,
+        subsample=1.0,
+        colsample_bytree=1.0,
+        min_child_weight=1,
+        reg_lambda=1.0,
+        reg_alpha=0.0,
+        objective="reg:squarederror",
+        random_state=RANDOM_STATE,
+        tree_method="hist",
+        n_jobs=4,
+    )
 
     lr.fit(Xr_train, yr_train)
+    dt_reg.fit(Xr_train, yr_train)
     rf_reg.fit(Xr_train, yr_train)
+    xgb_reg.fit(Xr_train, yr_train)
 
     pred_lr = lr.predict(Xr_test)
+    pred_dt_reg = dt_reg.predict(Xr_test)
     pred_rf = rf_reg.predict(Xr_test)
+    pred_xgb_reg = xgb_reg.predict(Xr_test)
 
     reg_metrics = pd.DataFrame(
         [
             regression_metrics(yr_test, pred_lr, "Linear Regression"),
+            regression_metrics(yr_test, pred_dt_reg, "Decision Tree Regressor"),
             regression_metrics(yr_test, pred_rf, "Random Forest Regressor"),
+            regression_metrics(yr_test, pred_xgb_reg, "XGBoost Regressor"),
         ]
     ).sort_values("rmse")
     reg_metrics.to_csv(OUTPUT_DIR / "table_regression_metrics.csv", index=False)
 
-    reg_importance = pd.DataFrame(
+    reg_importance_rf = pd.DataFrame(
         {"feature": features, "importance": rf_reg.feature_importances_}
     ).sort_values("importance", ascending=False)
+    reg_importance_xgb = pd.DataFrame(
+        {"feature": features, "importance": xgb_reg.feature_importances_}
+    ).sort_values("importance", ascending=False)
+    reg_importance_rf.to_csv(OUTPUT_DIR / "table_feature_importance_regression_rf.csv", index=False)
+    reg_importance_xgb.to_csv(OUTPUT_DIR / "table_feature_importance_regression_xgb.csv", index=False)
+
+    best_reg_model_name = str(reg_metrics.iloc[0]["model"])
+    if best_reg_model_name == "Random Forest Regressor":
+        reg_importance = reg_importance_rf.copy()
+    elif best_reg_model_name == "XGBoost Regressor":
+        reg_importance = reg_importance_xgb.copy()
+    else:
+        # Linear model has coefficient-based interpretation rather than tree importance.
+        # Use XGBoost importance table for a richer non-linear feature view.
+        reg_importance = reg_importance_xgb.copy()
+    reg_importance["importance_model"] = (
+        best_reg_model_name if best_reg_model_name != "Linear Regression" else "XGBoost Regressor"
+    )
     reg_importance.to_csv(OUTPUT_DIR / "table_feature_importance_regression.csv", index=False)
 
     # Classification models
@@ -362,6 +422,12 @@ def build_outputs(df: pd.DataFrame) -> None:
             ("model", LogisticRegression(max_iter=2000, class_weight="balanced")),
         ]
     )
+    dt_cls = DecisionTreeClassifier(
+        max_depth=6,
+        min_samples_leaf=15,
+        class_weight="balanced",
+        random_state=RANDOM_STATE,
+    )
     rf_cls = RandomForestClassifier(
         n_estimators=700,
         max_depth=10,
@@ -370,26 +436,64 @@ def build_outputs(df: pd.DataFrame) -> None:
         random_state=RANDOM_STATE,
         n_jobs=-1,
     )
+    xgb_cls = XGBClassifier(
+        n_estimators=700,
+        max_depth=4,
+        learning_rate=0.03,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        min_child_weight=2,
+        reg_lambda=3.0,
+        reg_alpha=0.1,
+        objective="binary:logistic",
+        eval_metric="auc",
+        random_state=RANDOM_STATE,
+        tree_method="hist",
+        n_jobs=4,
+    )
 
     logit.fit(Xc_train, yc_train)
+    dt_cls.fit(Xc_train, yc_train)
     rf_cls.fit(Xc_train, yc_train)
+    xgb_cls.fit(Xc_train, yc_train)
 
     pred_logit = logit.predict(Xc_test)
     prob_logit = logit.predict_proba(Xc_test)[:, 1]
+    pred_dt_cls = dt_cls.predict(Xc_test)
+    prob_dt_cls = dt_cls.predict_proba(Xc_test)[:, 1]
     pred_rf_cls = rf_cls.predict(Xc_test)
     prob_rf_cls = rf_cls.predict_proba(Xc_test)[:, 1]
+    pred_xgb_cls = xgb_cls.predict(Xc_test)
+    prob_xgb_cls = xgb_cls.predict_proba(Xc_test)[:, 1]
 
     cls_metrics = pd.DataFrame(
         [
             classification_metrics(yc_test, pred_logit, prob_logit, "Logistic Regression"),
+            classification_metrics(yc_test, pred_dt_cls, prob_dt_cls, "Decision Tree Classifier"),
             classification_metrics(yc_test, pred_rf_cls, prob_rf_cls, "Random Forest Classifier"),
+            classification_metrics(yc_test, pred_xgb_cls, prob_xgb_cls, "XGBoost Classifier"),
         ]
     ).sort_values("roc_auc", ascending=False)
     cls_metrics.to_csv(OUTPUT_DIR / "table_classification_metrics.csv", index=False)
 
-    cls_importance = pd.DataFrame(
+    cls_importance_rf = pd.DataFrame(
         {"feature": features, "importance": rf_cls.feature_importances_}
     ).sort_values("importance", ascending=False)
+    cls_importance_xgb = pd.DataFrame(
+        {"feature": features, "importance": xgb_cls.feature_importances_}
+    ).sort_values("importance", ascending=False)
+    cls_importance_rf.to_csv(OUTPUT_DIR / "table_feature_importance_classification_rf.csv", index=False)
+    cls_importance_xgb.to_csv(OUTPUT_DIR / "table_feature_importance_classification_xgb.csv", index=False)
+    best_cls_model_name = str(cls_metrics.iloc[0]["model"])
+    if best_cls_model_name == "Random Forest Classifier":
+        cls_importance = cls_importance_rf.copy()
+    elif best_cls_model_name == "XGBoost Classifier":
+        cls_importance = cls_importance_xgb.copy()
+    else:
+        cls_importance = cls_importance_xgb.copy()
+    cls_importance["importance_model"] = (
+        best_cls_model_name if best_cls_model_name != "Logistic Regression" else "XGBoost Classifier"
+    )
     cls_importance.to_csv(OUTPUT_DIR / "table_feature_importance_classification.csv", index=False)
 
     # Summary table for weather categories
@@ -415,17 +519,31 @@ def build_outputs(df: pd.DataFrame) -> None:
     )
 
     fig, ax1 = plt.subplots(figsize=(11, 4.5))
-    ax1.plot(monthly["date"], monthly["total_delay_mins"], color="#1f4e79", linewidth=2.2)
-    ax1.set_ylabel("Monthly total delay minutes", color="#1f4e79")
-    ax1.tick_params(axis="y", labelcolor="#1f4e79")
+    ax1.plot(
+        monthly["date"],
+        monthly["total_delay_mins"],
+        color=COLORS["navy"],
+        linewidth=2.4,
+        marker="o",
+        markersize=2.8,
+    )
+    ax1.set_ylabel("Monthly total delay minutes", color=COLORS["navy"])
+    ax1.tick_params(axis="y", labelcolor=COLORS["navy"])
     ax1.set_xlabel("Month")
+    ax1.grid(color=COLORS["light_grid"], linewidth=0.8, alpha=0.9)
 
     ax2 = ax1.twinx()
-    ax2.bar(monthly["date"], monthly["precip_mm"], alpha=0.25, color="#7aa6d1", width=18)
-    ax2.set_ylabel("Monthly precipitation (mm)", color="#3b6ea5")
-    ax2.tick_params(axis="y", labelcolor="#3b6ea5")
+    ax2.bar(
+        monthly["date"],
+        monthly["precip_mm"],
+        alpha=0.35,
+        color=COLORS["teal"],
+        width=18,
+    )
+    ax2.set_ylabel("Monthly precipitation (mm)", color=COLORS["teal"])
+    ax2.tick_params(axis="y", labelcolor=COLORS["teal"])
 
-    ax1.set_title("Monthly TTC Delay Burden and Precipitation (Toronto, 2014-2026)")
+    ax1.set_title("Monthly TTC Delay Minutes and Precipitation (Toronto, 2014-2026)")
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "fig1_monthly_delay_precip.png", dpi=240)
     plt.close(fig)
@@ -436,66 +554,137 @@ def build_outputs(df: pd.DataFrame) -> None:
         x="weather_type",
         y="total_delay_mins",
         order=["Clear", "Light Rain/Snow", "Heavy Rain/Snow"],
-        palette=["#d8e6f5", "#8cb7de", "#2b5f94"],
+        palette=[COLORS["blue"], COLORS["teal"], COLORS["coral"]],
         ax=ax,
     )
     ax.set_title("Daily Delay Distribution by Weather Category")
     ax.set_xlabel("Weather category")
     ax.set_ylabel("Daily total delay (minutes)")
+    ax.grid(axis="y", color=COLORS["light_grid"], linewidth=0.8, alpha=0.9)
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "fig2_weather_boxplot.png", dpi=240)
     plt.close(fig)
 
+    reg_pred_map = {
+        "Linear Regression": pred_lr,
+        "Decision Tree Regressor": pred_dt_reg,
+        "Random Forest Regressor": pred_rf,
+        "XGBoost Regressor": pred_xgb_reg,
+    }
+    best_reg_pred = reg_pred_map[best_reg_model_name]
+
     fig, ax = plt.subplots(figsize=(6, 5))
-    ax.scatter(yr_test, pred_rf, s=18, alpha=0.55, color="#2f6fa8", edgecolor="none")
-    lim_min = float(min(yr_test.min(), pred_rf.min()))
-    lim_max = float(max(yr_test.max(), pred_rf.max()))
-    ax.plot([lim_min, lim_max], [lim_min, lim_max], color="#102a43", linestyle="--")
+    ax.scatter(
+        yr_test,
+        best_reg_pred,
+        s=20,
+        alpha=0.58,
+        color=COLORS["blue"],
+        edgecolor="white",
+        linewidth=0.2,
+    )
+    lim_min = float(min(yr_test.min(), best_reg_pred.min()))
+    lim_max = float(max(yr_test.max(), best_reg_pred.max()))
+    ax.plot(
+        [lim_min, lim_max],
+        [lim_min, lim_max],
+        color=COLORS["orange"],
+        linestyle="--",
+        linewidth=1.8,
+    )
     ax.set_xlabel("Actual delay minutes")
     ax.set_ylabel("Predicted delay minutes")
-    ax.set_title("Random Forest Regression: Actual vs Predicted")
+    ax.set_title(f"{best_reg_model_name}: Actual vs Predicted")
+    ax.grid(color=COLORS["light_grid"], linewidth=0.8, alpha=0.9)
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "fig3_rf_actual_vs_pred.png", dpi=240)
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 4))
     imp_top = reg_importance.head(7).iloc[::-1]
-    ax.barh(imp_top["feature"], imp_top["importance"], color="#34699a")
+    bar_colors = [
+        COLORS["purple"],
+        COLORS["coral"],
+        COLORS["orange"],
+        COLORS["teal"],
+        "#6f93bf",
+        COLORS["blue"],
+        COLORS["navy"],
+    ]
+    ax.barh(imp_top["feature"], imp_top["importance"], color=bar_colors[: len(imp_top)])
     ax.set_xlabel("Importance")
     ax.set_ylabel("Feature")
-    ax.set_title("Top Predictors of Daily Delay (Random Forest)")
+    imp_model_label = reg_importance["importance_model"].iloc[0]
+    ax.set_title(f"Top Predictors of Daily Delay ({imp_model_label})")
+    ax.grid(axis="x", color=COLORS["light_grid"], linewidth=0.8, alpha=0.9)
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "fig4_feature_importance.png", dpi=240)
     plt.close(fig)
 
     fpr_logit, tpr_logit, _ = roc_curve(yc_test, prob_logit)
+    fpr_dt, tpr_dt, _ = roc_curve(yc_test, prob_dt_cls)
     fpr_rf, tpr_rf, _ = roc_curve(yc_test, prob_rf_cls)
+    fpr_xgb, tpr_xgb, _ = roc_curve(yc_test, prob_xgb_cls)
 
     fig, ax = plt.subplots(figsize=(6, 5))
-    ax.plot(fpr_logit, tpr_logit, label="Logistic Regression", color="#5c7fa3", linewidth=2)
-    ax.plot(fpr_rf, tpr_rf, label="Random Forest", color="#0f4c81", linewidth=2)
-    ax.plot([0, 1], [0, 1], linestyle="--", color="#9aa5b1")
+    ax.plot(
+        fpr_logit,
+        tpr_logit,
+        label="Logistic Regression",
+        color=COLORS["orange"],
+        linewidth=2.2,
+    )
+    ax.plot(
+        fpr_dt,
+        tpr_dt,
+        label="Decision Tree",
+        color=COLORS["teal"],
+        linewidth=2.0,
+    )
+    ax.plot(
+        fpr_rf,
+        tpr_rf,
+        label="Random Forest",
+        color=COLORS["navy"],
+        linewidth=2.4,
+    )
+    ax.plot(
+        fpr_xgb,
+        tpr_xgb,
+        label="XGBoost",
+        color=COLORS["purple"],
+        linewidth=2.2,
+    )
+    ax.plot([0, 1], [0, 1], linestyle="--", color=COLORS["gray"], linewidth=1.4)
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
     ax.set_title("ROC Curves: Severe Delay Day Classification")
-    ax.legend()
+    ax.legend(frameon=True, facecolor="#ffffff", edgecolor="#c9d7e6")
+    ax.grid(color=COLORS["light_grid"], linewidth=0.8, alpha=0.9)
     fig.tight_layout()
     fig.savefig(OUTPUT_DIR / "fig5_roc_curve.png", dpi=240)
     plt.close(fig)
 
-    cm = confusion_matrix(yc_test, pred_rf_cls)
+    cls_pred_map = {
+        "Logistic Regression": pred_logit,
+        "Decision Tree Classifier": pred_dt_cls,
+        "Random Forest Classifier": pred_rf_cls,
+        "XGBoost Classifier": pred_xgb_cls,
+    }
+    best_cls_pred = cls_pred_map[best_cls_model_name]
+    cm = confusion_matrix(yc_test, best_cls_pred)
     fig, ax = plt.subplots(figsize=(5.2, 4.5))
     sns.heatmap(
         cm,
         annot=True,
         fmt="d",
-        cmap="Blues",
+        cmap="YlGnBu",
         cbar=False,
         xticklabels=["Not Severe", "Severe"],
         yticklabels=["Not Severe", "Severe"],
         ax=ax,
     )
-    ax.set_title("Random Forest Confusion Matrix")
+    ax.set_title(f"{best_cls_model_name} Confusion Matrix")
     ax.set_xlabel("Predicted")
     ax.set_ylabel("Actual")
     fig.tight_layout()
@@ -513,7 +702,7 @@ def build_outputs(df: pd.DataFrame) -> None:
             y=roll["total_delay_mins"],
             name="Daily total delay",
             mode="lines",
-            line={"color": "#5c88b5", "width": 1},
+            line={"color": COLORS["blue"], "width": 1.1},
             opacity=0.65,
         ),
         secondary_y=False,
@@ -524,7 +713,7 @@ def build_outputs(df: pd.DataFrame) -> None:
             y=roll["delay_30d_ma"],
             name="30-day moving average",
             mode="lines",
-            line={"color": "#163d64", "width": 2.2},
+            line={"color": COLORS["orange"], "width": 2.4},
         ),
         secondary_y=False,
     )
@@ -533,8 +722,8 @@ def build_outputs(df: pd.DataFrame) -> None:
             x=roll["date"],
             y=roll["precip_mm"],
             name="Precipitation (mm)",
-            marker_color="#99c2e8",
-            opacity=0.35,
+            marker_color=COLORS["teal"],
+            opacity=0.34,
         ),
         secondary_y=True,
     )
@@ -557,9 +746,9 @@ def build_outputs(df: pd.DataFrame) -> None:
         nbins=55,
         category_orders={"weather_type": ["Clear", "Light Rain/Snow", "Heavy Rain/Snow"]},
         color_discrete_map={
-            "Clear": "#b8d4f0",
-            "Light Rain/Snow": "#5d8fbf",
-            "Heavy Rain/Snow": "#1f4e79",
+            "Clear": COLORS["blue"],
+            "Light Rain/Snow": COLORS["teal"],
+            "Heavy Rain/Snow": COLORS["coral"],
         },
         title="Interactive Figure 2: Delay Histogram by Weather Category",
         labels={"total_delay_mins": "Daily total delay (minutes)", "weather_type": "Weather"},
@@ -576,7 +765,7 @@ def build_outputs(df: pd.DataFrame) -> None:
             "weather_type": ["Clear", "Light Rain/Snow", "Heavy Rain/Snow"],
             "day_type": ["Weekday", "Weekend"],
         },
-        color_discrete_map={"Weekday": "#0f4c81", "Weekend": "#79a8d2"},
+        color_discrete_map={"Weekday": COLORS["navy"], "Weekend": COLORS["orange"]},
         points=False,
         title="Interactive Figure 3: Weekday vs Weekend Delay by Weather Type",
         labels={
@@ -594,13 +783,44 @@ def build_outputs(df: pd.DataFrame) -> None:
         "start_date": str(df["date"].min().date()),
         "end_date": str(df["date"].max().date()),
         "severe_threshold": float(df["total_delay_mins"].quantile(0.75)),
-        "best_reg_model": reg_metrics.iloc[0]["model"],
+        "best_reg_model": best_reg_model_name,
         "best_reg_rmse": float(reg_metrics.iloc[0]["rmse"]),
         "best_reg_r2": float(reg_metrics.iloc[0]["r2"]),
-        "best_cls_model": cls_metrics.iloc[0]["model"],
+        "best_cls_model": best_cls_model_name,
         "best_cls_auc": float(cls_metrics.iloc[0]["roc_auc"]),
         "best_cls_f1": float(cls_metrics.iloc[0]["f1"]),
+        "xgb_reg_rmse": float(
+            reg_metrics.loc[reg_metrics["model"] == "XGBoost Regressor", "rmse"].iloc[0]
+        ),
+        "xgb_reg_r2": float(
+            reg_metrics.loc[reg_metrics["model"] == "XGBoost Regressor", "r2"].iloc[0]
+        ),
+        "xgb_cls_auc": float(
+            cls_metrics.loc[cls_metrics["model"] == "XGBoost Classifier", "roc_auc"].iloc[0]
+        ),
+        "xgb_cls_f1": float(
+            cls_metrics.loc[cls_metrics["model"] == "XGBoost Classifier", "f1"].iloc[0]
+        ),
+        "precip_delay_corr": float(df[["precip_mm", "total_delay_mins"]].corr().iloc[0, 1]),
+        "severe_rate": float(df["severe_day"].mean()),
+        "weekday_mean_delay": float(
+            df.loc[df["day_type"] == "Weekday", "total_delay_mins"].mean()
+        ),
+        "weekend_mean_delay": float(
+            df.loc[df["day_type"] == "Weekend", "total_delay_mins"].mean()
+        ),
+        "heavy_mean_delay": float(
+            df.loc[df["weather_type"] == "Heavy Rain/Snow", "total_delay_mins"].mean()
+        ),
+        "clear_mean_delay": float(
+            df.loc[df["weather_type"] == "Clear", "total_delay_mins"].mean()
+        ),
     }
+    key_numbers["heavy_vs_clear_ratio"] = (
+        key_numbers["heavy_mean_delay"] / key_numbers["clear_mean_delay"]
+        if key_numbers["clear_mean_delay"] > 0
+        else float("nan")
+    )
     (OUTPUT_DIR / "key_numbers.json").write_text(json.dumps(key_numbers, indent=2), encoding="utf-8")
 
     # Persist prediction tables
@@ -609,6 +829,8 @@ def build_outputs(df: pd.DataFrame) -> None:
             "actual_delay_mins": yr_test.values,
             "pred_rf_delay_mins": pred_rf,
             "pred_lr_delay_mins": pred_lr,
+            "pred_dt_delay_mins": pred_dt_reg,
+            "pred_xgb_delay_mins": pred_xgb_reg,
         }
     )
     pred_table.to_csv(OUTPUT_DIR / "table_regression_predictions_test.csv", index=False)
@@ -618,8 +840,12 @@ def build_outputs(df: pd.DataFrame) -> None:
             "actual_severe": yc_test.values,
             "pred_logit": pred_logit,
             "prob_logit": prob_logit,
+            "pred_dt": pred_dt_cls,
+            "prob_dt": prob_dt_cls,
             "pred_rf": pred_rf_cls,
             "prob_rf": prob_rf_cls,
+            "pred_xgb": pred_xgb_cls,
+            "prob_xgb": prob_xgb_cls,
         }
     )
     cls_pred.to_csv(OUTPUT_DIR / "table_classification_predictions_test.csv", index=False)
@@ -653,8 +879,11 @@ def main() -> None:
     ).astype(int)
 
     merged.to_csv(DATA_DIR / "processed_daily.csv", index=False)
-    # Keep a local sample of incident-level data for transparency
-    incidents.head(15000).to_csv(DATA_DIR / "ttc_incidents_sample.csv", index=False)
+    # Keep a representative sample of incident-level data for transparency.
+    # Random sampling avoids over-representing early years when data is date-sorted.
+    sample_n = min(15000, len(incidents))
+    incidents_sample = incidents.sample(n=sample_n, random_state=RANDOM_STATE).sort_values("date")
+    incidents_sample.to_csv(DATA_DIR / "ttc_incidents_sample.csv", index=False)
 
     print("4) Training models and exporting tables/figures...")
     build_outputs(merged)

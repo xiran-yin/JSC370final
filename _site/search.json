@@ -39,98 +39,112 @@
     "href": "report.html",
     "title": "JSC370 Final Project Report",
     "section": "",
-    "text": "Public transit reliability is a daily quality-of-life issue in Toronto, especially when weather conditions deteriorate. The Toronto Transit Commission (TTC) carries more than one million riders per day, and even moderate delays can create wide social and economic costs through missed connections, longer commute times, and reduced service confidence.\nThis project examines how weather conditions are associated with TTC subway delay burden at the daily level. The analysis extends the midterm topic and narrows scope to the elements required for the final project: reproducible data acquisition, feature engineering, regression and classification modeling, and communication through publication-ready outputs plus interactive visualizations.\nThe specific research questions are:\n\nHow strongly are precipitation and weather severity associated with daily total delay minutes?\nWhich engineered weather features are most predictive of delay burden?\nCan we accurately classify whether a day is a severe delay day (top quartile of delay minutes)?\n\nThe working hypotheses are:\n\nHigher precipitation and snowfall are positively associated with total delay minutes.\nWeather effects are amplified on weekdays due to higher passenger load.\nA machine-learning classifier using engineered weather features can identify severe-delay days with practically useful discrimination."
+    "text": "Public transit reliability is a daily quality-of-life issue in Toronto, especially when weather conditions deteriorate. The Toronto Transit Commission (TTC) carries more than one million riders per day, and even moderate delays can create wide social and economic costs through missed connections, longer commute times, and reduced service confidence.\nThis project examines how weather conditions are associated with TTC subway delay minutes at the daily level. The analysis extends the midterm topic and narrows scope to the elements required for the final project: reproducible data acquisition, feature engineering, regression and classification modeling, and communication through publication-ready outputs plus interactive visualizations.\nThe specific research questions are:\n\nHow strongly are precipitation and weather severity associated with daily total delay minutes?\nDo weekday and weekend days have different delay levels once weather is accounted for?\nWhich engineered weather features are most predictive of daily delay minutes?\nCan we accurately classify whether a day is a severe delay day (top quartile of delay minutes)?\n\nThe hypotheses are specified in testable null/alternative form:\n\nRQ1 (Weather severity)\n\nH0_1: Precipitation and weather severity have no association with daily total delay (no difference in expected delay across weather groups).\nH1_1: Higher precipitation/severity is associated with higher daily total delay.\n\nRQ2 (Weekday vs weekend)\n\nH0_2: Expected daily delay is the same for weekdays and weekends after controlling for weather features.\nH1_2: Expected daily delay differs by day type, with higher delay minutes on weekdays.\n\nRQ3 (Predictor relevance)\n\nH0_3: Weather-engineered predictors do not improve predictive fit relative to a minimal baseline.\nH1_3: Weather-engineered predictors provide measurable predictive gain.\n\nRQ4 (Severe-day classification)\n\nH0_4: Classification models do not outperform near-random discrimination for severe-day detection.\nH1_4: At least one model achieves meaningful discrimination on held-out data (higher ROC-AUC/F1 than baseline)."
+  },
+  {
+    "objectID": "report.html#model-choice-and-rationale",
+    "href": "report.html#model-choice-and-rationale",
+    "title": "JSC370 Final Project Report",
+    "section": "2.1 Model Choice and Rationale",
+    "text": "2.1 Model Choice and Rationale\nThe modeling strategy intentionally combines interpretable baselines with non-linear learners:\n\nLinear Regression and Logistic Regression provide transparent baseline relationships for continuous and binary outcomes.\nDecision Tree models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.\nRandom Forest models reduce single-tree variance and generally improve out-of-sample stability.\nXGBoost adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.\n\nThis structure directly tests whether non-linear weather effects materially improve held-out performance relative to linear baselines."
   },
   {
     "objectID": "report.html#data-sources",
     "href": "report.html#data-sources",
     "title": "JSC370 Final Project Report",
-    "section": "2.1 Data Sources",
-    "text": "2.1 Data Sources\nTwo data streams were acquired programmatically:\n\nWeather data (Open-Meteo archive API): Daily weather records for Toronto (2014-01-01 to 2026-03-31), including precipitation, snowfall, temperature, and wind variables.\nTTC subway delay data (Toronto Open Data CKAN API): Incident-level delay records across multiple historical CSV/XLS/XLSX resources from package ttc-subway-delay-data.\n\nAll source calls are made inside scripts/final_pipeline.py, and output files are regenerated from scratch when the pipeline is rerun."
+    "section": "2.2 Data Sources",
+    "text": "2.2 Data Sources\nTwo data streams were acquired programmatically:\n\nWeather data (Open-Meteo archive API): Daily weather records for Toronto (requested range: 2014-01-01 to 2026-03-31), including precipitation, snowfall, temperature, and wind variables.\nTTC subway delay data (Toronto Open Data CKAN API): Incident-level delay records across multiple historical CSV/XLS/XLSX resources from package ttc-subway-delay-data.\n\nAll source calls are made inside scripts/final_pipeline.py, and output files are regenerated from scratch when the pipeline is rerun."
   },
   {
     "objectID": "report.html#data-wrangling-and-feature-engineering",
     "href": "report.html#data-wrangling-and-feature-engineering",
     "title": "JSC370 Final Project Report",
-    "section": "2.2 Data Wrangling and Feature Engineering",
-    "text": "2.2 Data Wrangling and Feature Engineering\nThe TTC files use inconsistent column names across years. The pipeline applies flexible column detection for date and delay fields, then standardizes to incident-level schema:\n\ndate\nmin_delay\noptional line, station (when available)\n\nRecords are filtered to valid numeric delay values and aggregated to daily totals:\n\ntotal_delay_mins (sum of incident delay minutes)\ntotal_incidents (incident count)\nmedian_incident_delay\n\nWeather and TTC daily data are merged by date (inner join). The final analysis table contains 2863 days from 2014-01-01 to 2026-01-31.\nEngineered predictors include:\n\nmean_temp_c (daily average of max/min temperature)\nprecip_intensity (precipitation per active precipitation hour)\nweather_type (Clear / Light Rain-Snow / Heavy Rain-Snow)\nis_weekend_int\ncalendar features (month_num, day_of_week)\n\nThe classification target is:\n\nsevere_day = 1 if daily delay is at or above the 75th percentile threshold (193.0 minutes), else 0.\n\nThe 75th-percentile cutoff is used as a pragmatic high-risk threshold for classification; regression results are reported in parallel to avoid over-reliance on a single binary definition of severity."
+    "section": "2.3 Data Wrangling and Feature Engineering",
+    "text": "2.3 Data Wrangling and Feature Engineering\nThe TTC files use inconsistent column names across years. To address this, the pipeline uses conditional parsing rules:\n\nDate-column detection: candidate columns are scored by name pattern (e.g., date, occ date) and empirical parse success rate.\nDelay-column detection: candidate columns are scored by delay-like names (e.g., min_delay) and numeric-validity rate, while non-delay text fields are penalized.\nException handling: each CKAN resource is wrapped in try/except; failed files are logged in outputs/ttc_resource_pull_log.csv rather than stopping the pipeline.\n\nAfter detection, records are standardized to a common incident-level schema:\n\ndate\nmin_delay\noptional line, station (when available)\n\nRecords are filtered to valid numeric delay values and aggregated to daily totals:\n\ntotal_delay_mins (sum of incident delay minutes)\ntotal_incidents (incident count)\nmedian_incident_delay\n\nWeather and TTC daily data are merged by date (inner join). This means the final time window is the overlap of both sources. Although weather is requested through 2026-03-31, TTC daily records currently extend through 2026-01-31, so the merged table ends at 2026-01-31. The final analysis table contains 2863 days from 2014-01-01 to 2026-01-31.\nEngineered predictors include:\n\nmean_temp_c (daily average of max/min temperature)\nprecip_intensity (precipitation per active precipitation hour)\nweather_type (Clear / Light Rain-Snow / Heavy Rain-Snow)\nis_weekend_int\ncalendar features (month_num, day_of_week)\n\nFor model training, the numeric feature set is: precip_mm, snowfall_cm, gust_speed, mean_temp_c, precip_intensity, is_weekend_int, and month_num.\nThe three-level weather severity variable is constructed with explicit breakpoints:\n\nClear: precip_mm = 0 and snowfall_cm = 0\nLight Rain/Snow: precip_mm &gt; 0 or snowfall_cm &gt; 0, but not meeting heavy criteria\nHeavy Rain/Snow: precip_mm &gt;= 10 or snowfall_cm &gt;= 5\n\nThese thresholds operationalize weather intensity in interpretable categories for both descriptive tables and model features.\nFor reproducibility checks, data/ttc_incidents_sample.csv stores a random sample of incident records across the full multi-year window rather than a first-year slice.\nThe classification target is:\n\nsevere_day = 1 if daily delay is at or above the 75th percentile threshold (193.0 minutes), else 0.\n\nThe 75th-percentile cutoff is used as a pragmatic high-risk threshold for classification; regression results are reported in parallel to avoid over-reliance on a single binary definition of severity."
   },
   {
     "objectID": "report.html#modeling-strategy",
     "href": "report.html#modeling-strategy",
     "title": "JSC370 Final Project Report",
-    "section": "2.3 Modeling Strategy",
-    "text": "2.3 Modeling Strategy\nTwo modeling tasks were implemented.\n\n2.3.1 Regression\nPredicting continuous total_delay_mins on a 70/30 train-test split:\n\nBaseline: Linear Regression\nMain model: Random Forest Regressor\n\nMetrics: R², RMSE, and MAE.\n\n\n2.3.2 Classification\nPredicting binary severe_day on a stratified 70/30 split:\n\nBaseline: Logistic Regression (with standardization)\nMain model: Random Forest Classifier\n\nMetrics: Accuracy, Precision, Recall, F1, ROC-AUC.\nModel interpretation includes feature-importance diagnostics."
+    "section": "2.4 Modeling Strategy",
+    "text": "2.4 Modeling Strategy\nTwo modeling tasks were implemented.\n\n2.4.1 Regression\nPredicting continuous total_delay_mins on a 70/30 train-test split:\n\nBaseline: Linear Regression\nAdditional tree models: Decision Tree Regressor, Random Forest Regressor\nComplex boosted model: XGBoost Regressor\n\nKey hyperparameters were set before final evaluation (e.g., RF n_estimators=700, max_depth=12; XGBoost n_estimators=400, max_depth=3, learning_rate=0.05).\nMetrics: R², RMSE, and MAE on the held-out test set.\n\n\n2.4.2 Classification\nPredicting binary severe_day on a stratified 70/30 split:\n\nBaseline: Logistic Regression (with standardization)\nAdditional tree models: Decision Tree Classifier, Random Forest Classifier\nComplex boosted model: XGBoost Classifier\n\nKey hyperparameters were set before final evaluation (e.g., RF n_estimators=700, max_depth=10; XGBoost n_estimators=700, max_depth=4, learning_rate=0.03, eval_metric=AUC).\nMetrics: Accuracy, Precision, Recall, F1, ROC-AUC on the held-out test set.\nModel interpretation includes feature-importance diagnostics."
   },
   {
     "objectID": "report.html#descriptive-patterns",
     "href": "report.html#descriptive-patterns",
     "title": "JSC370 Final Project Report",
     "section": "3.1 Descriptive Patterns",
-    "text": "3.1 Descriptive Patterns\n\n\n\n\n\n\nFigure 1: Figure 1. Monthly aggregated TTC delay minutes (line) and monthly precipitation totals (bars). The long-run pattern shows repeated co-movement during wetter periods.\n\n\n\nFigure 1 shows clear long-run co-movement between precipitation load and monthly delay burden. While seasonality exists, delay peaks are not purely calendar-driven; they align with high precipitation periods.\n\n\n\n\n\n\nFigure 2: Figure 2. Distribution of daily delay minutes by weather category. Heavy precipitation/snow days have a higher median and wider tail of extreme delays.\n\n\n\nFigure 2 confirms monotonic separation across weather severity categories: heavier weather conditions correspond to higher median delay and greater spread.\n\n\n\n\nTable 1: Daily delay summary by weather category.\n\n\n\n\n\n\n\n\n\n\nweather_type\nn_days\nmean_delay_mins\nmedian_delay_mins\nmean_incidents\nmean_precip_mm\n\n\n\n\n0\nClear\n1305\n143.72\n128.0\n59.42\n0.00\n\n\n1\nHeavy Rain/Snow\n216\n189.62\n156.0\n65.03\n16.90\n\n\n2\nLight Rain/Snow\n1342\n156.41\n137.0\n61.73\n2.23\n\n\n\n\n\n\n\n\n\n\nTable 1 quantifies this visual pattern. Heavy weather days have the highest average and median delay burden, supporting the first hypothesis."
+    "text": "3.1 Descriptive Patterns\n\n\n\n\n\n\nFigure 1: Figure 1. Monthly aggregated TTC delay minutes (line) and monthly precipitation totals (bars). The long-run pattern shows repeated co-movement during wetter periods.\n\n\n\nFigure 1 shows clear long-run co-movement between precipitation load and monthly delay minutes. While seasonality exists, delay peaks are not purely calendar-driven; they align with high precipitation periods.\n\n\n\n\n\n\nFigure 2: Figure 2. Distribution of daily delay minutes by weather category. Heavy precipitation/snow days have a higher median and wider tail of extreme delays.\n\n\n\nFigure 2 confirms monotonic separation across weather severity categories: heavier weather conditions correspond to higher median delay and greater spread.\n\n\n\n\nTable 1: Daily delay summary by weather category.\n\n\n\n\n\n\n\n\n\n\nweather_type\nn_days\nmean_delay_mins\nmedian_delay_mins\nmean_incidents\nmean_precip_mm\n\n\n\n\n0\nClear\n1305\n143.72\n128.0\n59.42\n0.00\n\n\n1\nHeavy Rain/Snow\n216\n189.62\n156.0\n65.03\n16.90\n\n\n2\nLight Rain/Snow\n1342\n156.41\n137.0\n61.73\n2.23\n\n\n\n\n\n\n\n\n\n\nTable 1 quantifies this visual pattern. Heavy weather days have the highest average and median delay minutes, supporting the first hypothesis."
   },
   {
     "objectID": "report.html#regression-performance",
     "href": "report.html#regression-performance",
     "title": "JSC370 Final Project Report",
     "section": "3.2 Regression Performance",
-    "text": "3.2 Regression Performance\n\n\n\n\nTable 2: Regression model comparison on the held-out test set.\n\n\n\n\n\n\n\n\n\n\nmodel\nr2\nrmse\nmae\n\n\n\n\n0\nRandom Forest Regressor\n0.0916\n95.5140\n67.7745\n\n\n1\nLinear Regression\n0.0635\n96.9793\n67.6417\n\n\n\n\n\n\n\n\n\n\nRandom Forest Regressor is the best-performing regression model on RMSE, with RMSE 95.51 and R² 0.092. This indicates materially better predictive fit than a purely linear specification.\n\n\n\n\n\n\nFigure 3: Figure 3. Random Forest regression performance on held-out data (actual vs predicted). Points near the diagonal indicate accurate predictions.\n\n\n\nFigure 3 shows generally good calibration with expected underprediction at the highest tail values, a common behavior for tree ensembles under severe outlier conditions.\n\n\n\n\nTable 3: Top weather predictors of delay (Random Forest regression feature importance).\n\n\n\n\n\n\n\n\n\n\nfeature\nimportance\n\n\n\n\n0\nmean_temp_c\n0.2619\n\n\n1\ngust_speed\n0.2144\n\n\n2\nsnowfall_cm\n0.1775\n\n\n3\nprecip_mm\n0.1116\n\n\n4\nprecip_intensity\n0.1071\n\n\n5\nmonth_num\n0.0767\n\n\n6\nis_weekend_int\n0.0508\n\n\n\n\n\n\n\n\n\n\nFeature importance results emphasize precipitation-related variables, along with wind and temperature. This aligns with operational intuition that extreme moisture and wind conditions increase infrastructure stress and service disruption risk."
+    "text": "3.2 Regression Performance\n\n\n\n\nTable 2: Regression model comparison on the held-out test set.\n\n\n\n\n\n\n\n\n\n\nmodel\nr2\nrmse\nmae\n\n\n\n\n0\nRandom Forest Regressor\n0.0916\n95.5140\n67.7745\n\n\n1\nXGBoost Regressor\n0.0829\n95.9706\n67.9678\n\n\n2\nLinear Regression\n0.0635\n96.9793\n67.6417\n\n\n3\nDecision Tree Regressor\n0.0566\n97.3353\n68.4907\n\n\n\n\n\n\n\n\n\n\nRandom Forest Regressor is the best-performing regression model on RMSE, with RMSE 95.51 and R² 0.092. This indicates materially better predictive fit than a purely linear specification.\n\n\n\n\n\n\nFigure 3: Figure 3. Top predictor importance from the best tree-based regression model.\n\n\n\nFeature importance results emphasize precipitation-related variables, along with wind and temperature. This aligns with operational intuition that extreme moisture and wind conditions increase infrastructure stress and service disruption risk."
   },
   {
     "objectID": "report.html#severe-delay-classification",
     "href": "report.html#severe-delay-classification",
     "title": "JSC370 Final Project Report",
     "section": "3.3 Severe-Delay Classification",
-    "text": "3.3 Severe-Delay Classification\n\n\n\n\nTable 4: Classification model comparison for severe-delay-day detection.\n\n\n\n\n\n\n\n\n\n\nmodel\naccuracy\nprecision\nrecall\nf1\nroc_auc\n\n\n\n\n0\nRandom Forest Classifier\n0.7159\n0.4182\n0.3180\n0.3613\n0.6221\n\n\n1\nLogistic Regression\n0.5308\n0.3046\n0.6682\n0.4185\n0.6091\n\n\n\n\n\n\n\n\n\n\nRandom Forest Classifier achieves the best discrimination with ROC-AUC 0.622 and F1 0.361, indicating meaningful classification performance on the severe-day task.\n\n\n\n\n\n\nFigure 4: Figure 4. ROC curves for severe-delay-day classification.\n\n\n\nThe ROC comparison shows consistent improvement of the Random Forest classifier over logistic regression in separating severe from non-severe days.\nTogether with Table 4, the ROC analysis indicates a practical classification signal for identifying weather-linked high-risk service days."
+    "text": "3.3 Severe-Delay Classification\n\n\n\n\nTable 3: Classification model comparison for severe-delay-day detection.\n\n\n\n\n\n\n\n\n\n\nmodel\naccuracy\nprecision\nrecall\nf1\nroc_auc\n\n\n\n\n0\nRandom Forest Classifier\n0.7159\n0.4182\n0.3180\n0.3613\n0.6221\n\n\n1\nLogistic Regression\n0.5308\n0.3046\n0.6682\n0.4185\n0.6091\n\n\n2\nXGBoost Classifier\n0.7346\n0.4154\n0.1244\n0.1915\n0.5941\n\n\n3\nDecision Tree Classifier\n0.6100\n0.2500\n0.2719\n0.2605\n0.5301\n\n\n\n\n\n\n\n\n\n\nRandom Forest Classifier achieves the best discrimination with ROC-AUC 0.622 and F1 0.361, indicating meaningful classification performance on the severe-day task.\nTogether with the model comparison table, these results indicate a practical classification signal for identifying weather-linked high-risk service days."
   },
   {
     "objectID": "report.html#limitations",
     "href": "report.html#limitations",
     "title": "JSC370 Final Project Report",
     "section": "4.1 Limitations",
-    "text": "4.1 Limitations\n\nDaily-level aggregation can hide intra-day dynamics (e.g., rush-hour clustering).\nHistorical TTC files are heterogeneous and require robust but imperfect column harmonization.\nStation-level geospatial analysis is only partially supported by fields available across all years.\nCausal interpretation is limited; the models are predictive/associational rather than causal.\nSevere-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs."
-  },
-  {
-    "objectID": "report.html#next-steps",
-    "href": "report.html#next-steps",
-    "title": "JSC370 Final Project Report",
-    "section": "4.2 Next Steps",
-    "text": "4.2 Next Steps\n\nExpand to hourly models when high-resolution incident timestamps are consistently available.\nAdd exogenous operational factors (special events, planned maintenance, service level changes).\nIntegrate uncertainty bands into operational forecasting outputs.\n\nFor interactive exploration of the same dataset, see the Interactive Visualizations page on the project website."
+    "text": "4.1 Limitations\n\nDaily-level aggregation can hide intra-day dynamics (e.g., rush-hour clustering).\nHistorical TTC files are heterogeneous and require robust but imperfect column harmonization.\nStation-level geospatial analysis is only partially supported by fields available across all years.\nCausal interpretation is limited; the models are predictive/associational rather than causal.\nSevere-day classification depends on the selected percentile cutoff; threshold choice may shift precision/recall trade-offs.\n\nFor interactive exploration of the same dataset, see the Interactive Visualizations page on the project website."
   },
   {
     "objectID": "index.html",
     "href": "index.html",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
     "section": "",
-    "text": "This project studies how Toronto weather conditions influence TTC subway delay burden from 2014 to 2026. I merge Open-Meteo daily weather data with TTC incident-level delay records from Toronto Open Data, then evaluate both:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures."
+    "text": "This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures."
   },
   {
     "objectID": "index.html#project-summary",
     "href": "index.html#project-summary",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
     "section": "",
-    "text": "This project studies how Toronto weather conditions influence TTC subway delay burden from 2014 to 2026. I merge Open-Meteo daily weather data with TTC incident-level delay records from Toronto Open Data, then evaluate both:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures."
+    "text": "This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures."
+  },
+  {
+    "objectID": "index.html#key-findings",
+    "href": "index.html#key-findings",
+    "title": "JSC370 Final Project: Weather and TTC Subway Delays",
+    "section": "2 Key Findings",
+    "text": "2 Key Findings\n\n\n2.1 Weather Severity\nHeavy rain/snow days show about 1.32x the average delay of clear days.\nThe precipitation-delay correlation is r = 0.106.\n\n\n2.2 Day-Type Gap\nWeekday average delay minutes are 1.27x weekend levels.\n\n\n2.3 Model Comparison\nRegression RMSE: Linear 96.98, Decision Tree 97.34, Random Forest 95.51, XGBoost 95.97.\nClassification ROC-AUC: Logistic 0.609, Decision Tree 0.53, Random Forest 0.622, XGBoost 0.594.\n\n\n2.4 Risk Threshold\nThe severe-day threshold is 193.0 minutes/day (75th percentile), flagging 25.2% of days."
+  },
+  {
+    "objectID": "index.html#final-results-snapshot",
+    "href": "index.html#final-results-snapshot",
+    "title": "JSC370 Final Project: Weather and TTC Subway Delays",
+    "section": "3 Final Results Snapshot",
+    "text": "3 Final Results Snapshot\n\n\n\n\nTable 1: Final project summary metrics.\n\n\n\n\n\n\n\n\n\n\nMetric\nValue\n\n\n\n\n0\nAnalysis window\n2014-01-01 to 2026-01-31\n\n\n1\nHeavy vs clear delay ratio\n1.32x\n\n\n2\nPrecipitation-delay correlation\nr = 0.106\n\n\n3\nBest regression model (RMSE)\nRandom Forest Regressor (95.51)\n\n\n4\nBest classification model (ROC-AUC)\nRandom Forest Classifier (0.622)\n\n\n5\nSevere-day threshold\n193.0 min/day (75th percentile)\n\n\n6\nSevere-day share\n25.2%"
   },
   {
     "objectID": "index.html#deliverables",
     "href": "index.html#deliverables",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
-    "section": "2 Deliverables",
-    "text": "2 Deliverables\n\nRead the full final report\nDownload the PDF report\nView interactive visualizations (HW5 requirement)\nView the 5-minute presentation slides\nProject source code on GitHub"
+    "section": "4 Deliverables",
+    "text": "4 Deliverables\n\nRead the full final report\nDownload the PDF report\nView interactive visualizations (HW5 requirement)\nView the 5-minute presentation slides\nProject source code on GitHub"
   },
   {
     "objectID": "index.html#data-sources",
     "href": "index.html#data-sources",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
-    "section": "3 Data Sources",
-    "text": "3 Data Sources\n\nOpen-Meteo archive API: https://archive-api.open-meteo.com/v1/archive\nToronto Open Data CKAN API package: https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=ttc-subway-delay-data"
+    "section": "5 Data Sources",
+    "text": "5 Data Sources\n\nOpen-Meteo archive API: https://archive-api.open-meteo.com/v1/archive\nToronto Open Data CKAN API package: https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=ttc-subway-delay-data"
   },
   {
     "objectID": "index.html#reproducibility-note",
     "href": "index.html#reproducibility-note",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
-    "section": "4 Reproducibility Note",
-    "text": "4 Reproducibility Note\nAll outputs are generated by:\n\nRunning python3 scripts/final_pipeline.py\nRendering with Quarto (quarto render)\n\nThe repository includes:\n\ndata/processed_daily.csv (analysis-ready daily panel)\noutputs/ (model tables, static figures, interactive figure HTML)\nQuarto source files for website, report, and slides\n\nThis workflow ensures no hidden local file paths are required."
+    "section": "6 Reproducibility Note",
+    "text": "6 Reproducibility Note\nAll outputs are generated by:\n\nRunning python3 scripts/final_pipeline.py\nRendering with Quarto (quarto render)\n\nThe repository includes:\n\ndata/processed_daily.csv (analysis-ready daily panel)\noutputs/ (model tables, static figures, interactive figure HTML)\nQuarto source files for website, report, and slides\n\nThis workflow ensures no hidden local file paths are required."
   },
   {
     "objectID": "viz.html",
@@ -144,20 +158,20 @@
     "href": "viz.html#figure-1-interactive",
     "title": "Interactive Visualizations",
     "section": "1 Figure 1 (Interactive)",
-    "text": "1 Figure 1 (Interactive)\n\n\nCaption. Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.\nSummary. Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked burden rather than isolated anomalies."
+    "text": "1 Figure 1 (Interactive)\nWhat this shows: A daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay.\nWhy it is useful: It highlights whether delay peaks are isolated events or part of persistent weather-related patterns.\nHow to read it: Track blue daily values, then use the orange rolling line for medium-term trend; compare both against teal precipitation bars on the secondary axis.\n\n\nCaption. Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.\nSummary. Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked delay pressure rather than isolated anomalies."
   },
   {
     "objectID": "viz.html#figure-2-interactive",
     "href": "viz.html#figure-2-interactive",
     "title": "Interactive Visualizations",
     "section": "2 Figure 2 (Interactive)",
-    "text": "2 Figure 2 (Interactive)\n\n\nCaption. Histogram of daily total delays, colored by weather category.\nSummary. Heavy rain/snow days shift the distribution toward larger delay totals and contribute disproportionately to the right tail."
+    "text": "2 Figure 2 (Interactive)\nWhat this shows: The full distribution of daily total delay minutes, stratified by weather category.\nWhy it is useful: It compares central tendency and tail risk across clear, light rain/snow, and heavy rain/snow days.\nHow to read it: Look for rightward shifts and thicker right tails; those indicate higher delay totals and more extreme days.\n\n\nCaption. Histogram of daily total delays, colored by weather category.\nSummary. Heavy rain/snow days shift the distribution toward larger delay totals and contribute disproportionately to the right tail."
   },
   {
     "objectID": "viz.html#figure-3-interactive",
     "href": "viz.html#figure-3-interactive",
     "title": "Interactive Visualizations",
     "section": "3 Figure 3 (Interactive)",
-    "text": "3 Figure 3 (Interactive)\n\n\nCaption. Boxplot comparison of delay burden across weather categories by weekday/weekend.\nSummary. Weekdays consistently show higher delay distributions than weekends, and adverse weather amplifies this weekday effect."
+    "text": "3 Figure 3 (Interactive)\nWhat this shows: A weekday-versus-weekend boxplot comparison of delay minutes within each weather category.\nWhy it is useful: It isolates whether day-type differences persist under similar weather conditions.\nHow to read it: Compare the median bars and interquartile ranges between weekday and weekend boxes inside each weather group.\n\n\nCaption. Boxplot comparison of daily delay minutes across weather categories by weekday/weekend.\nSummary. Weekdays consistently show higher delay distributions than weekends, and adverse weather amplifies this weekday effect."
   }
 ]

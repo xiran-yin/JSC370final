@@ -1,0 +1,8 @@
+feature,importance
+is_weekend_int,0.31573015
+precip_mm,0.12524179
+snowfall_cm,0.121379115
+mean_temp_c,0.11414096
+month_num,0.110291034
+gust_speed,0.10693658
+precip_intensity,0.10628038

@@ -8,5 +8,16 @@
   "best_reg_r2": 0.09159336555837805,
   "best_cls_model": "Random Forest Classifier",
   "best_cls_auc": 0.6221341717271776,
-  "best_cls_f1": 0.3612565445026178
+  "best_cls_f1": 0.3612565445026178,
+  "xgb_reg_rmse": 95.97055619433493,
+  "xgb_reg_r2": 0.08288860321044922,
+  "xgb_cls_auc": 0.5941075555938383,
+  "xgb_cls_f1": 0.19148936170212766,
+  "precip_delay_corr": 0.10643673521544028,
+  "severe_rate": 0.2521830247991617,
+  "weekday_mean_delay": 163.03519061583577,
+  "weekend_mean_delay": 128.31578947368422,
+  "heavy_mean_delay": 189.625,
+  "clear_mean_delay": 143.71570881226054,
+  "heavy_vs_clear_ratio": 1.3194451849916555
 }

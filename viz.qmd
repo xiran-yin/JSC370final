@@ -9,12 +9,20 @@ This page contains three interactive visualizations built from the final project
 
 ## Figure 1 (Interactive)
 
+**What this shows:** A daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay.  
+**Why it is useful:** It highlights whether delay peaks are isolated events or part of persistent weather-related patterns.  
+**How to read it:** Track blue daily values, then use the orange rolling line for medium-term trend; compare both against teal precipitation bars on the secondary axis.
+
 <iframe src="outputs/viz1_timeseries.html" width="100%" height="560" style="border:1px solid #cdd8e6; border-radius:6px;"></iframe>
 
 **Caption.** Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay.  
-**Summary.** Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked burden rather than isolated anomalies.
+**Summary.** Delay spikes cluster in wetter periods, and the rolling mean highlights persistent weather-linked delay pressure rather than isolated anomalies.
 
 ## Figure 2 (Interactive)
+
+**What this shows:** The full distribution of daily total delay minutes, stratified by weather category.  
+**Why it is useful:** It compares central tendency and tail risk across clear, light rain/snow, and heavy rain/snow days.  
+**How to read it:** Look for rightward shifts and thicker right tails; those indicate higher delay totals and more extreme days.
 
 <iframe src="outputs/viz2_histogram.html" width="100%" height="560" style="border:1px solid #cdd8e6; border-radius:6px;"></iframe>
 
@@ -23,7 +31,11 @@ This page contains three interactive visualizations built from the final project
 
 ## Figure 3 (Interactive)
 
+**What this shows:** A weekday-versus-weekend boxplot comparison of delay minutes within each weather category.  
+**Why it is useful:** It isolates whether day-type differences persist under similar weather conditions.  
+**How to read it:** Compare the median bars and interquartile ranges between weekday and weekend boxes inside each weather group.
+
 <iframe src="outputs/viz3_boxplot.html" width="100%" height="560" style="border:1px solid #cdd8e6; border-radius:6px;"></iframe>
 
-**Caption.** Boxplot comparison of delay burden across weather categories by weekday/weekend.  
+**Caption.** Boxplot comparison of daily delay minutes across weather categories by weekday/weekend.  
 **Summary.** Weekdays consistently show higher delay distributions than weekends, and adverse weather amplifies this weekday effect.
