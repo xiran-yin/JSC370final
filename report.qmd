@@ -1,7 +1,6 @@
 ---
-title: "JSC370 Final Project Report"
+title: "JSC370 Final Project Report: How Do Weather Conditions Shape Daily TTC Subway Delay Risk in Toronto?"
 author: "Xiran Yin"
-date: last-modified
 format:
   html:
     toc: true
