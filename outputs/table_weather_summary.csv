@@ -1,4 +1,4 @@
 weather_type,n_days,mean_delay_mins,median_delay_mins,mean_incidents,mean_precip_mm
-Clear,1305,143.72,128.0,59.42,0.0
-Heavy Rain/Snow,216,189.62,156.0,65.03,16.9
-Light Rain/Snow,1342,156.41,137.0,61.73,2.23
+Clear,1945,96.43,85.0,39.87,0.0
+Heavy Rain/Snow,348,117.7,81.0,40.36,16.41
+Light Rain/Snow,2121,98.96,85.0,39.06,2.26

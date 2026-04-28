@@ -1,8 +1,8 @@
 feature,importance,importance_model
-mean_temp_c,0.26194563601771004,Random Forest Regressor
-gust_speed,0.21435246746502454,Random Forest Regressor
-snowfall_cm,0.1775044878533968,Random Forest Regressor
-precip_mm,0.11162844655553951,Random Forest Regressor
-precip_intensity,0.10711426570464402,Random Forest Regressor
-month_num,0.07665481439565143,Random Forest Regressor
-is_weekend_int,0.05079988200803373,Random Forest Regressor
+mean_temp_c,0.28967588705052133,Random Forest Regressor
+gust_speed,0.19681988795192767,Random Forest Regressor
+month_num,0.14893351146148678,Random Forest Regressor
+precip_intensity,0.12997267270158805,Random Forest Regressor
+precip_mm,0.12089642809459233,Random Forest Regressor
+snowfall_cm,0.0842034094343193,Random Forest Regressor
+is_weekend_int,0.029498203305564387,Random Forest Regressor

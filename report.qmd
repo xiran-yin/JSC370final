@@ -35,6 +35,8 @@ tbl_imp = pd.read_csv(root / "outputs" / "table_feature_importance_regression.cs
 key = json.loads((root / "outputs" / "key_numbers.json").read_text(encoding="utf-8"))
 
 n_days = key["n_days"]
+n_days_with_incidents = key.get("n_days_with_incidents", n_days)
+n_zero_incident_days = key.get("n_zero_incident_days", 0)
 start_date = key["start_date"]
 end_date = key["end_date"]
 severe_threshold = key["severe_threshold"]
@@ -116,7 +118,13 @@ Records are filtered to valid numeric delay values and aggregated to daily total
 - `total_incidents` (incident count)
 - `median_incident_delay`
 
-Weather and TTC daily data are merged by date (`inner join`). This means the final time window is the overlap of both sources. Although weather is requested through 2026-03-31, TTC daily records currently extend through 2026-01-31, so the merged table ends at 2026-01-31. The final analysis table contains `{python} n_days` days from `{python} start_date` to `{python} end_date`.
+The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is then created over this overlap and merged with weather and TTC daily aggregates. Days with no TTC incident records are explicitly retained and coded as:
+
+- `total_delay_mins = 0`
+- `total_incidents = 0`
+- `median_incident_delay = 0`
+
+The final analysis table contains `{python} n_days` calendar days from `{python} start_date` to `{python} end_date`, of which `{python} n_days_with_incidents` have at least one recorded incident and `{python} n_zero_incident_days` have zero recorded incidents.
 
 Engineered predictors include:
 

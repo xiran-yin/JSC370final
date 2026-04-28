@@ -25,6 +25,9 @@ precip_corr = key["precip_delay_corr"]
 weekday_weekend_ratio = key["weekday_mean_delay"] / key["weekend_mean_delay"]
 severe_threshold = key["severe_threshold"]
 severe_rate = key["severe_rate"] * 100
+n_days = key["n_days"]
+n_days_with_incidents = key.get("n_days_with_incidents", n_days)
+n_zero_incident_days = key.get("n_zero_incident_days", 0)
 
 lr_rmse = m(tbl_reg, "Linear Regression", "rmse")
 dt_rmse = m(tbl_reg, "Decision Tree Regressor", "rmse")
@@ -40,6 +43,9 @@ summary_table = pd.DataFrame(
     {
         "Metric": [
             "Analysis window",
+            "Calendar days in analysis",
+            "Days with recorded incidents",
+            "Days with zero recorded incidents",
             "Heavy vs clear delay ratio",
             "Precipitation-delay correlation",
             "Best regression model (RMSE)",
@@ -49,6 +55,9 @@ summary_table = pd.DataFrame(
         ],
         "Value": [
             f'{key["start_date"]} to {key["end_date"]}',
+            f"{n_days}",
+            f"{n_days_with_incidents}",
+            f"{n_zero_incident_days}",
             f"{heavy_clear_ratio:.2f}x",
             f"r = {precip_corr:.3f}",
             f'{key["best_reg_model"]} ({key["best_reg_rmse"]:.2f})',

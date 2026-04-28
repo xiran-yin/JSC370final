@@ -780,6 +780,8 @@ def build_outputs(df: pd.DataFrame) -> None:
     # Save compact key numbers for inline report text
     key_numbers = {
         "n_days": int(len(df)),
+        "n_days_with_incidents": int((df["total_incidents"] > 0).sum()),
+        "n_zero_incident_days": int((df["total_incidents"] == 0).sum()),
         "start_date": str(df["date"].min().date()),
         "end_date": str(df["date"].max().date()),
         "severe_threshold": float(df["total_delay_mins"].quantile(0.75)),
@@ -862,7 +864,22 @@ def main() -> None:
     print(f"   Daily rows: {len(ttc_daily):,}")
 
     print("3) Building merged analysis dataset...")
-    merged = pd.merge(ttc_daily, weather, on="date", how="inner").sort_values("date").reset_index(drop=True)
+    analysis_start = max(ttc_daily["date"].min(), weather["date"].min())
+    analysis_end = min(ttc_daily["date"].max(), weather["date"].max())
+    calendar = pd.DataFrame({"date": pd.date_range(analysis_start, analysis_end, freq="D")})
+
+    merged = (
+        calendar.merge(weather, on="date", how="left")
+        .merge(ttc_daily, on="date", how="left")
+        .sort_values("date")
+        .reset_index(drop=True)
+    )
+
+    # No incident record on a calendar day is treated as zero daily delay by construction.
+    merged["total_delay_mins"] = merged["total_delay_mins"].fillna(0.0)
+    merged["total_incidents"] = merged["total_incidents"].fillna(0).astype(int)
+    merged["median_incident_delay"] = merged["median_incident_delay"].fillna(0.0)
+
     merged["month_num"] = merged["date"].dt.month
     merged["month"] = merged["date"].dt.month_name()
     merged["month_abbr"] = merged["date"].dt.strftime("%b")

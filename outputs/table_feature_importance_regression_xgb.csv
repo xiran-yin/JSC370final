@@ -1,8 +1,8 @@
 feature,importance
-snowfall_cm,0.3028436
-is_weekend_int,0.30065092
-month_num,0.09383836
-precip_intensity,0.08773661
-gust_speed,0.07683216
-mean_temp_c,0.07330697
-precip_mm,0.06479138
+month_num,0.31187466
+is_weekend_int,0.19374304
+precip_intensity,0.13191299
+snowfall_cm,0.10245496
+mean_temp_c,0.09798862
+precip_mm,0.09352861
+gust_speed,0.06849716
