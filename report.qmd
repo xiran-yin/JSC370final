@@ -115,7 +115,7 @@ The merged panel spans `{python} start_date` to `{python} end_date` (calendar da
 The specific research questions are:
 
 1. How strongly are precipitation and weather severity associated with daily total delay minutes?
-2. Do weekday and weekend days have different delay levels once weather is accounted for?
+2. Do delay levels differ between weekdays and weekends after accounting for weather conditions?
 3. Which engineered weather features are most predictive of daily delay minutes?
 4. Can we accurately classify whether a day is a **severe delay day** (top quartile of delay minutes)?
 
@@ -123,21 +123,10 @@ The hypotheses are specified in testable null/alternative form:
 
 1. **RQ1:** H0_1 = no association between precipitation/severity and daily delay; H1_1 = higher precipitation/severity is associated with higher daily delay.
 2. **RQ2:** H0_2 = no weekday/weekend difference after weather controls; H1_2 = weekday and weekend expected delays differ.
-3. **RQ3:** H0_3 = engineered weather predictors do not improve predictive fit over baseline; H1_3 = they improve predictive fit.
+3. **RQ3:** H0_3 = engineered weather predictors do not improve predictive fit over baseline; H1_3 = engineered weather predictors improve predictive fit over baseline on the held-out test set.
 4. **RQ4:** H0_4 = classification does not outperform random severe-day ranking; H1_4 = at least one model yields ROC-AUC above random.
 
 # Methods
-
-## Model Choice and Rationale
-
-RQ1–RQ2 are evaluated with descriptive statistics and regression coefficients, while RQ3–RQ4 use supervised prediction. The model set combines interpretable baselines with non-linear learners:
-
-1. **Linear Regression** and **Logistic Regression** provide transparent baseline relationships for continuous and binary outcomes.
-2. **Decision Tree** models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.
-3. **Random Forest** models reduce single-tree variance and generally improve out-of-sample stability.
-4. **XGBoost** adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.
-
-This structure tests whether added model complexity materially improves held-out accuracy beyond linear baselines.
 
 ## Data Sources
 
@@ -209,6 +198,18 @@ The 75th-percentile cutoff is used as a pragmatic high-risk threshold for classi
 ## Data Exploration Tools
 
 Exploratory diagnostics were done with Pandas summary tables (coverage/range checks), Seaborn/Matplotlib static plots (distribution and seasonal structure), and Plotly interactive visuals (time-series and weather/day-type comparisons).
+The exploratory workflow was refined from the midterm implementation documented in `midterm_final_1.qmd`, then updated for the final project’s expanded date range and model comparisons.
+
+## Model Choice and Rationale
+
+RQ1–RQ2 are evaluated with descriptive statistics and regression coefficients, while RQ3–RQ4 use supervised prediction. The model set combines interpretable baselines with non-linear learners:
+
+1. **Linear Regression** and **Logistic Regression** provide transparent baseline relationships for continuous and binary outcomes.
+2. **Decision Tree** models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.
+3. **Random Forest** models reduce single-tree variance and generally improve out-of-sample stability.
+4. **XGBoost** adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.
+
+This structure tests whether added model complexity materially improves held-out accuracy beyond linear baselines.
 
 ## Modeling Strategy
 
