@@ -112,6 +112,16 @@ figure img {
   border: 1px solid #d7e1eb;
 }
 
+#fig-descriptive figure {
+  width: 100%;
+}
+
+#fig-descriptive .figure-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 figcaption {
   margin-top: 0.55rem;
   font-size: 0.98rem;

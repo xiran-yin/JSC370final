@@ -24,6 +24,7 @@ import json
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import statsmodels.formula.api as smf
 
 root = Path(".")
 
@@ -64,6 +65,9 @@ logit_auc = float(tbl_cls.loc[tbl_cls["model"] == "Logistic Regression", "roc_au
 coef_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "coef"].iloc[0])
 p_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "p_value"].iloc[0])
 p_precip_label = "<0.001" if p_precip < 0.001 else f"{p_precip:.4f}"
+coef_snow = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "snowfall_cm", "coef"].iloc[0])
+p_snow = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "snowfall_cm", "p_value"].iloc[0])
+p_snow_label = "<0.001" if p_snow < 0.001 else f"{p_snow:.4f}"
 coef_weekend = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "is_weekend_int", "coef"].iloc[0])
 p_weekend = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "is_weekend_int", "p_value"].iloc[0])
 
@@ -118,6 +122,7 @@ The specific research questions are:
 4. Can we accurately classify whether a day is a **severe delay day** (top quartile of delay minutes)?
 
 The hypotheses are specified in testable null/alternative form:
+Here, `H0_i` denotes the null hypothesis for research question `i`, and `H1_i` denotes the corresponding alternative hypothesis.
 
 1. **RQ1:** H0_1 = no association between precipitation/severity and daily delay; H1_1 = higher precipitation/severity is associated with higher daily delay.
 2. **RQ2:** H0_2 = no weekday/weekend difference after weather controls; H1_2 = weekday and weekend expected delays differ.
@@ -142,7 +147,8 @@ The TTC files use inconsistent column names across years. To address this, the p
 
 - **Date-column detection:** candidate columns are scored by name pattern (e.g., `date`, `occ date`) and empirical parse success rate.
 - **Delay-column detection:** candidate columns are scored by delay-like names (e.g., `min_delay`) and numeric-validity rate, while non-delay text fields are penalized.
-- **Exception handling:** each CKAN resource is wrapped in `try/except`; failed files are logged in `outputs/ttc_resource_pull_log.csv` rather than stopping the pipeline.
+- **Multi-sheet Excel parsing:** for `.xls/.xlsx` resources, all sheets are scanned and parseable sheets are concatenated before aggregation, preventing month-level data loss in multi-tab yearly files.
+- **Exception handling and logging:** each CKAN resource is wrapped in `try/except`; failed or skipped resources are logged in `outputs/ttc_resource_pull_log.csv` rather than stopping the pipeline.
 
 After detection, records are standardized to a common incident-level schema:
 
@@ -156,11 +162,7 @@ Records are filtered to valid numeric delay values and aggregated to daily total
 - `total_incidents` (incident count)
 - `median_incident_delay`
 
-The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is created over this overlap and merged with weather and TTC daily aggregates. For reproducibility across future data refreshes, days with no TTC incident records are coded as:
-
-- `total_delay_mins = 0`
-- `total_incidents = 0`
-- `median_incident_delay = 0`
+The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is created over this overlap and merged with weather and TTC daily aggregates. The pipeline retains a fallback rule that would code no-incident days as zero-valued delay fields in future data refreshes; in this run, that fallback is not triggered.
 
 The final daily table contains `{python} n_days` calendar days from `{python} start_date` to `{python} end_date`, of which `{python} n_days_with_incidents` have at least one recorded incident and `{python} n_zero_incident_days` have zero recorded incidents. In this run, annual coverage is complete (`{python} round(min_cov, 1)`% minimum by year), so the incident-recorded subset (`{python} n_model_days` days) equals the full panel.
 All regression, classification, and hypothesis-testing results are still estimated on incident-recorded days by design; with current coverage, this is equivalent to the full date range.
@@ -194,7 +196,7 @@ The 75th-percentile cutoff is used as a pragmatic high-risk threshold for classi
 
 ## Data Exploration Tools
 
-Exploratory diagnostics were done with Pandas summary tables (coverage/range checks), Seaborn/Matplotlib static plots (distribution and seasonal structure), and Plotly interactive visuals (time-series and weather/day-type comparisons).
+Exploratory diagnostics were done with Pandas summary tables (coverage/range checks), Seaborn/Matplotlib static plots (distribution and seasonal structure), and [Plotly interactive visuals](viz.html) (time-series and weather/day-type comparisons).
 The exploratory workflow was refined from the midterm implementation documented in [midterm_final.html](https://xiran-yin.github.io/JSC370/midterm_final.html), then updated for the final project’s expanded date range and model comparisons.
 
 ## Model Choice and Rationale
@@ -232,9 +234,8 @@ Predicting binary `severe_day` on a stratified 70/30 split:
 - Complex boosted model: XGBoost Classifier
 
 Hyperparameters follow the same validation-first logic (e.g., RF `n_estimators=700`, `max_depth=10`; XGBoost `n_estimators=700`, `max_depth=4`, `learning_rate=0.03`, `eval_metric=AUC`).  
-Metrics: Accuracy, Precision, Recall, F1, ROC-AUC on the held-out test set.  
-Model interpretation includes feature-importance diagnostics.
-Five-fold cross-validation on incident-recorded days was also used as a robustness check: RF regression CV RMSE was `{python} round(cv_reg_rmse, 2)` (CV R² `{python} round(cv_reg_r2, 3)`), and classification CV ROC-AUC was `{python} round(cv_rf_auc, 3)` for RF versus `{python} round(cv_logit_auc, 3)` for logistic regression.
+For classification performance, the held-out test set is evaluated with Accuracy, Precision, Recall, F1, and ROC-AUC. Feature-importance diagnostics are reported to show which predictors drive model decisions.  
+As a robustness check, five-fold cross-validation was run on incident-recorded days: RF regression reached CV RMSE `{python} round(cv_reg_rmse, 2)` (CV R² `{python} round(cv_reg_r2, 3)`), while classification CV ROC-AUC was `{python} round(cv_rf_auc, 3)` for Random Forest and `{python} round(cv_logit_auc, 3)` for Logistic Regression.
 
 Hypothesis decisions are tied to explicit rules: coefficient sign and `p < 0.05` for RQ1–RQ2, held-out RMSE gain for RQ3, and ROC-AUC above 0.5 for RQ4.
 
@@ -291,38 +292,42 @@ plt.show()
 plt.close(fig)
 ```
 
-Figure 1 is a two-panel diagnostic: the top panel is the monthly trend view and the bottom panel is the weather-category distribution view. The top panel now shows continuous coverage across the full 2014-2026 window, with visibly higher monthly totals in recent years. The bottom panel shows a higher center and broader upper tail under heavy weather.
+Figure 1 combines two complementary diagnostics. The top panel shows the monthly trend in total delay minutes with precipitation context, and the bottom panel shows the incident-day delay distribution by weather category. Across 2014-2026, monthly totals are visibly higher in recent years, and the heavy-weather distribution shows both a higher center and a broader upper tail.
 
 ```{python}
-fig1_stats = pd.DataFrame(
-    {
-        "Statistic": [
-            "Heavy-weather mean delay (min)",
-            "Clear-weather mean delay (min)",
-            "Heavy/Clear delay ratio",
-            "Precipitation slope beta (OLS)",
-            "Precipitation p-value (OLS)",
-        ],
-        "Value": [
-            round(key["heavy_mean_delay"], 1),
-            round(key["clear_mean_delay"], 1),
-            f'{round(heavy_clear_ratio, 2)}x',
-            round(coef_precip, 3),
-            p_precip_label,
-        ],
-        "Source": [
-            "outputs/table_weather_summary.csv",
-            "outputs/table_weather_summary.csv",
-            "outputs/key_numbers.json",
-            "outputs/table_hypothesis_terms.csv",
-            "outputs/table_hypothesis_terms.csv",
-        ],
-    }
-)
-fig1_stats
+#| label: tbl-weather-summary
+#| tbl-cap: "Weather-category descriptive summary on incident-recorded days."
+tbl_weather.round(2)
 ```
 
-The table above shows where the Figure 1 headline numbers come from; all of them are generated by `scripts/final_pipeline.py` from `data/processed_daily.csv`.
+```{python}
+#| label: tbl-ols
+#| tbl-cap: "OLS coefficient summary for daily total delay minutes (incident-recorded days)."
+ols_df = daily.loc[
+    daily["total_incidents"] > 0,
+    ["total_delay_mins", "precip_mm", "snowfall_cm", "mean_temp_c", "is_weekend_int"],
+].dropna()
+ols_fit = smf.ols(
+    "total_delay_mins ~ precip_mm + snowfall_cm + mean_temp_c + is_weekend_int",
+    data=ols_df,
+).fit()
+ols_table = pd.DataFrame(
+    {
+        "term": ols_fit.params.index,
+        "coef": ols_fit.params.values,
+        "std_err": ols_fit.bse.values,
+        "t": ols_fit.tvalues.values,
+        "p_value": ols_fit.pvalues.values,
+        "ci_95_low": ols_fit.conf_int()[0].values,
+        "ci_95_high": ols_fit.conf_int()[1].values,
+    }
+)
+ols_table = ols_table[ols_table["term"] != "Intercept"].copy()
+ols_table["p_value"] = ols_table["p_value"].apply(lambda p: "<0.001" if p < 0.001 else f"{p:.4f}")
+ols_table.round(3)
+```
+
+Taken together, the two tables provide a descriptive-to-model bridge for Figure 1. The weather summary table reports raw group-level patterns (including the heavy-weather mean of `{python} round(key["heavy_mean_delay"], 1)` minutes versus `{python} round(key["clear_mean_delay"], 1)` on clear days). The OLS model is estimated on incident-recorded days with complete covariates (n = `{python} len(ols_df)`) using `total_delay_mins ~ precip_mm + snowfall_cm + mean_temp_c + is_weekend_int`; it suggests positive adjusted associations for both precipitation (beta = `{python} round(coef_precip, 3)`, p `{python} p_precip_label`) and snowfall (beta = `{python} round(coef_snow, 3)`, p `{python} p_snow_label`), while weekend days remain lower than weekdays (beta = `{python} round(coef_weekend, 3)`).
 
 ## Model Performance
 
@@ -338,26 +343,29 @@ tbl_reg.round(4)
 tbl_cls.round(4)
 ```
 
-Table 1 shows that `{python} best_reg_model` has the lowest held-out RMSE (`{python} round(best_reg_rmse, 2)`) with R² `{python} round(best_reg_r2, 3)`. The gain over linear regression is modest (`{python} round(rmse_gain_pct, 2)`% RMSE reduction), so weather features add signal, but daily delay still has substantial unexplained variability. Table 2 shows moderate severe-day discrimination: `{python} best_cls_model` has the top ROC-AUC (`{python} round(best_cls_auc, 3)`), while logistic regression retains comparatively strong recall/F1. Feature-importance outputs are reported in the interactive-visualization artifacts and emphasize precipitation, wind, and temperature predictors.
+Table 1 shows that `{python} best_reg_model` has the lowest held-out RMSE (`{python} round(best_reg_rmse, 2)`) with R² `{python} round(best_reg_r2, 3)`. The gain over linear regression is modest (`{python} round(rmse_gain_pct, 2)`% RMSE reduction), which indicates that weather variables improve fit but explain only part of day-level delay variation. Table 2 shows moderate severe-day discrimination: `{python} best_cls_model` has the top ROC-AUC (`{python} round(best_cls_auc, 3)`), which is above random (0.5) but still limited. In practical terms, this means severe days are ranked above non-severe days only moderately well. Logistic Regression also has the strongest recall/F1 in this comparison (recall `{python} round(float(tbl_cls.loc[tbl_cls["model"]=="Logistic Regression","recall"].iloc[0]), 3)`, F1 `{python} round(float(tbl_cls.loc[tbl_cls["model"]=="Logistic Regression","f1"].iloc[0]), 3)`), so it captures more severe days at the cost of more false alarms and lower overall accuracy than some tree models. This pattern is consistent with the OLS findings: weather effects are statistically detectable, but prediction remains limited without additional operational features. Feature-importance outputs are reported in the interactive-visualization artifacts and emphasize precipitation, wind, and temperature predictors.
 
 # Conclusions and Summary
-
-This analysis shows that weather is a meaningful but not dominant driver of daily TTC subway delay risk. Heavier rain/snow days have higher delay levels than clear days, and weekday delay levels are materially higher than weekend levels even after adjustment. At the same time, model performance indicates that weather variables alone do not fully explain daily delay variation, so operational and network factors likely account for additional risk.
-
-From a broader urban-infrastructure perspective, the key implication is planning prioritization: weather-aware service management can improve reliability, but practical forecasting should combine weather signals with operational indicators (e.g., incident type, line-level context, and peak-period load) for stronger day-level performance.
 
 ## Hypothesis Assessment
 
 Using the decision rules in Methods:
 
-1. **RQ1:** reject H0_1; precipitation is positively associated with delay (beta = `{python} round(coef_precip, 3)`, p = `{python} p_precip_label`) and heavy-weather mean delay is `{python} round(heavy_clear_ratio, 2)`x clear-weather delay.
-2. **RQ2:** reject H0_2; weekend coefficient is negative and significant (beta = `{python} round(coef_weekend, 3)`, p = `{python} "<0.001" if p_weekend < 0.001 else f"{p_weekend:.4f}"`), indicating higher weekday expected delay.
-3. **RQ3:** reject H0_3 with modest gain; best RMSE improves by `{python} round(rmse_gain_pct, 2)`% over linear baseline.
-4. **RQ4:** reject H0_4 with moderate effect; best ROC-AUC is `{python} round(best_cls_auc, 3)`, above random ranking (0.5).
+RQ1: reject H0_1; precipitation is positively associated with delay (beta = `{python} round(coef_precip, 3)`, p = `{python} p_precip_label`) and heavy-weather mean delay is `{python} round(heavy_clear_ratio, 2)`x clear-weather delay.  
+RQ2: reject H0_2; weekend coefficient is negative and significant (beta = `{python} round(coef_weekend, 3)`, p = `{python} "<0.001" if p_weekend < 0.001 else f"{p_weekend:.4f}"`), indicating higher weekday expected delay.  
+RQ3: reject H0_3 with modest gain; best RMSE improves by `{python} round(rmse_gain_pct, 2)`% over linear baseline.  
+RQ4: reject H0_4 with moderate effect; best ROC-AUC is `{python} round(best_cls_auc, 2)`, above random ranking (0.5).
+
+## Conclusion
+
+This analysis shows that weather is a meaningful but not dominant driver of daily TTC subway delay risk. Heavier rain/snow days have higher delay levels than clear days, and weekday delay levels are materially higher than weekend levels even after adjustment. At the same time, model performance indicates that weather variables alone do not fully explain daily delay variation, so operational and network factors likely account for additional risk.
+
+From a broader urban-infrastructure perspective, the key implication is planning prioritization: weather-aware service management can improve reliability, but practical forecasting should combine weather signals with operational indicators (e.g., incident type, line-level context, and peak-period load) for stronger day-level performance.
 
 ## Limitations
 
 1. Open-data resources can be revised over time; rerunning the pipeline on a later snapshot may change historical totals slightly.
 2. Daily aggregation masks intra-day structure (peak-hour concentration and line-specific mechanisms).
 3. The severe-day definition is percentile-based (`{python} round(severe_threshold, 1)` min/day) and therefore operationally useful but not a causal threshold.
-4. Findings are associational/predictive, not causal.
+4. The model uses weather and calendar predictors only; unobserved operational factors (e.g., ridership demand, planned service changes, line disruptions) may explain additional variation.
+5. Findings are associational/predictive, not causal.
