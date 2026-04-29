@@ -11,7 +11,7 @@ The current data extract has full incident-day coverage across the analysis wind
 
 ## Figure 1: Delay Trend with Precipitation
 
-This is a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. The plot distinguishes isolated spikes from more persistent weather-related delay patterns. By tracking the blue daily series first, then the orange rolling trend, and finally comparing both against the teal precipitation bars on the secondary axis, you can read short-term shocks and medium-term shifts together.
+This figure shows a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. The rolling trend indicates a gradual increase in delay burden over the full window, with visibly higher baseline levels in later years. Daily spikes remain episodic, and several high-precipitation periods align with elevated delay clusters.
 
 <iframe src="outputs/viz1_timeseries.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
@@ -19,7 +19,7 @@ This is a daily time-series of TTC total delay minutes, with a 30-day moving ave
 
 ## Figure 2: Monthly Mean Daily Delay (Year x Month)
 
-This is a year-by-month heatmap of mean daily TTC delay minutes. The plot highlights longer-run seasonal structure and multi-year shifts that are difficult to see in the raw day-level series. By scanning darker cells first and then comparing patterns across rows (year effects) and columns (seasonal effects), you can quickly identify when delay intensity was persistently elevated.
+This is a year-by-month heatmap of mean daily TTC delay minutes. The color field becomes generally darker from earlier-year rows to later-year rows (from bottom toward top), indicating higher monthly delay intensity in recent years. Within-year differences remain visible across months, but the multi-year darkening pattern is the dominant signal.
 
 <iframe src="outputs/viz2_heatmap.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
@@ -27,7 +27,7 @@ This is a year-by-month heatmap of mean daily TTC delay minutes. The plot highli
 
 ## Figure 3: Weekday vs Weekend Delay by Weather Type
 
-This is a weekday-versus-weekend boxplot comparison within each weather category. The plot is useful because it separates day-type effects from weather-category effects in the same weather regime. By comparing medians and interquartile ranges between weekday and weekend boxes inside each weather group, you can assess both average shift and variability differences.
+This is a weekday-versus-weekend boxplot comparison within each weather category. Weekday distributions are centered above weekend distributions across categories, showing higher overall weekday delay burden. Under Heavy Rain/Snow, the weekend upper tail is long, but the weekday median remains clearly higher.
 
 <iframe src="outputs/viz3_boxplot.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
@@ -35,7 +35,7 @@ This is a weekday-versus-weekend boxplot comparison within each weather category
 
 ## Figure 4: ROC Curves for Severe-Day Classification (Supplementary)
 
-This is an interactive ROC comparison across all four classification models. The plot is useful for threshold-independent model evaluation because it compares ranking quality rather than a single cutoff rule. Read it by looking for curves that stay farther toward the top-left corner; the legend reports each model's ROC-AUC directly.
+This is an interactive ROC comparison across all four classification models. The Logistic Regression curve is highest overall and has the best ROC-AUC in this run, while the tree-based models are close but slightly lower. The figure shows moderate discrimination above random baseline rather than strong separation.
 
 ```{python}
 from pathlib import Path
