@@ -14,18 +14,18 @@
     "text": "Goals\n\nBuild a reproducible API-based dataset (2014-2026)\nCompare regression and classification models\nIdentify top weather predictors of severe-delay days\nDeliver interactive results for exploration\n\n\nOpen with motivation: transit reliability affects daily quality of life. Define severe day as top quartile of delay minutes."
   },
   {
-    "objectID": "slides.html#regression",
-    "href": "slides.html#regression",
+    "objectID": "slides.html#regression-held-out",
+    "href": "slides.html#regression-held-out",
     "title": "JSC370 Final Project",
-    "section": "Regression",
-    "text": "Regression\n\nBaseline: Linear Regression\nMain model: Random Forest Regressor"
+    "section": "Regression (held-out)",
+    "text": "Regression (held-out)\n\nBest RMSE: Random Forest = 95.51\nRMSE gain vs Linear: 1.51%"
   },
   {
-    "objectID": "slides.html#classification",
-    "href": "slides.html#classification",
+    "objectID": "slides.html#classification-held-out",
+    "href": "slides.html#classification-held-out",
     "title": "JSC370 Final Project",
-    "section": "Classification",
-    "text": "Classification\n\nBaseline: Logistic Regression\nMain model: Random Forest Classifier\n\n\nPrecipitation and weather-stress variables dominate predictive importance."
+    "section": "Classification (held-out)",
+    "text": "Classification (held-out)\n\nBest ROC-AUC: Random Forest = 0.622\nBest F1: Logistic Regression = 0.418\n\n\nPrecipitation and weather-stress variables dominate predictive importance."
   },
   {
     "objectID": "slides.html#thank-you",
@@ -81,7 +81,7 @@
     "href": "report.html#descriptive-patterns",
     "title": "JSC370 Final Project Report: How Do Weather Conditions Shape Daily TTC Subway Delay Risk in Toronto?",
     "section": "3.1 Descriptive Patterns",
-    "text": "3.1 Descriptive Patterns\n\n\n\n\n\n\n\n\nFigure 1: Figure 1. Monthly trend/precipitation (left) and incident-day weather-category delay distribution (right).\n\n\n\n\n\nFigure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The 2017-2021 low/zero segment is intentionally retained because it reflects sparse incident-record coverage in those source years, not a literal system-wide absence of TTC delays. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average 189.6 minutes versus 143.7 minutes on clear days (ratio 1.32x), with positive precipitation slope (beta = {python} round(coef_precip, 3), p = {python} p_precip:.4f)."
+    "text": "3.1 Descriptive Patterns\n\n\n\n\n\n\n\n\nFigure 1: Figure 1. Monthly trend/precipitation (left) and incident-day weather-category delay distribution (right).\n\n\n\n\n\nFigure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The 2017-2021 low/zero segment is intentionally retained because it reflects sparse incident-record coverage in those source years, not a literal system-wide absence of TTC delays. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average 189.6 minutes versus 143.7 minutes on clear days (ratio 1.32x), with positive precipitation slope (beta = 1.149, p = 0.0052)."
   },
   {
     "objectID": "report.html#model-performance",
@@ -95,7 +95,7 @@
     "href": "report.html#hypothesis-assessment",
     "title": "JSC370 Final Project Report: How Do Weather Conditions Shape Daily TTC Subway Delay Risk in Toronto?",
     "section": "4.1 Hypothesis Assessment",
-    "text": "4.1 Hypothesis Assessment\nUsing the decision rules in Methods:\n\nRQ1: reject H0_1; precipitation is positively associated with delay (beta = {python} round(coef_precip, 3), p = {python} p_precip:.4f) and heavy-weather mean delay is 1.32x clear-weather delay.\nRQ2: reject H0_2; weekend coefficient is negative and significant (beta = {python} round(coef_weekend, 3), p &lt; 0.001), indicating higher weekday expected delay.\nRQ3: reject H0_3 with modest gain; best RMSE improves by 1.51% over linear baseline.\nRQ4: reject H0_4 with moderate effect; best ROC-AUC is 0.622, above random ranking (0.5)."
+    "text": "4.1 Hypothesis Assessment\nUsing the decision rules in Methods:\n\nRQ1: reject H0_1; precipitation is positively associated with delay (beta = 1.149, p = 0.0052) and heavy-weather mean delay is 1.32x clear-weather delay.\nRQ2: reject H0_2; weekend coefficient is negative and significant (beta = -34.858, p = &lt;0.001), indicating higher weekday expected delay.\nRQ3: reject H0_3 with modest gain; best RMSE improves by 1.51% over linear baseline.\nRQ4: reject H0_4 with moderate effect; best ROC-AUC is 0.622, above random ranking (0.5)."
   },
   {
     "objectID": "report.html#limitations",
@@ -109,14 +109,14 @@
     "href": "index.html",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
     "section": "",
-    "text": "This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures."
+    "text": "This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures.\nNote: the visible low/zero delay segment around 2017-2021 reflects sparse incident-record coverage in source files, not a literal period of no TTC delays."
   },
   {
     "objectID": "index.html#project-summary",
     "href": "index.html#project-summary",
     "title": "JSC370 Final Project: Weather and TTC Subway Delays",
     "section": "",
-    "text": "This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures."
+    "text": "This project studies how Toronto weather conditions influence TTC subway delay levels from 2014 to 2026. The Open-Meteo daily weather data were merged with TTC incident-level delay records from Toronto Open Data, and both of the following tasks were evaluated:\n\nRegression models for predicting total daily delay minutes.\nClassification models for identifying high-risk severe-delay days.\n\nThe analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures.\nNote: the visible low/zero delay segment around 2017-2021 reflects sparse incident-record coverage in source files, not a literal period of no TTC delays."
   },
   {
     "objectID": "index.html#key-findings",
@@ -165,7 +165,7 @@
     "href": "viz.html#figure-1-delay-trend-with-precipitation",
     "title": "Interactive Visualizations",
     "section": "1 Figure 1: Delay Trend with Precipitation",
-    "text": "1 Figure 1: Delay Trend with Precipitation\nWhat this shows: a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. Why it is useful: it distinguishes isolated spikes from persistent weather-related delay patterns. How to read it: track the blue daily series, then the orange rolling trend, and compare both against teal precipitation bars on the secondary axis.\n\n\nCaption. Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay."
+    "text": "1 Figure 1: Delay Trend with Precipitation\nWhat this shows: a daily time-series of TTC total delay minutes (full calendar days), with a 30-day moving average and daily precipitation overlay. Why it is useful: it distinguishes isolated spikes from persistent weather-related delay patterns while preserving the source-coverage structure of the panel. How to read it: track the blue daily series, then the orange rolling trend, and compare both against teal precipitation bars on the secondary axis.\n\n\nCaption. Daily TTC delay minutes over time with a 30-day moving average and precipitation overlay."
   },
   {
     "objectID": "viz.html#figure-2-monthly-mean-daily-delay-year-x-month",

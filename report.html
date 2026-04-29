@@ -4106,7 +4106,7 @@ Figure 1: Figure 1. Monthly trend/precipitation (left) and incident-day weather
 </div>
 </div>
 </div>
-<p>Figure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The 2017-2021 low/zero segment is intentionally retained because it reflects sparse incident-record coverage in those source years, not a literal system-wide absence of TTC delays. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average 189.6 minutes versus 143.7 minutes on clear days (ratio 1.32x), with positive precipitation slope (<code>beta = {python} round(coef_precip, 3)</code>, <code>p = {python} p_precip:.4f</code>).</p>
+<p>Figure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The 2017-2021 low/zero segment is intentionally retained because it reflects sparse incident-record coverage in those source years, not a literal system-wide absence of TTC delays. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average 189.6 minutes versus 143.7 minutes on clear days (ratio 1.32x), with positive precipitation slope (beta = 1.149, p = 0.0052).</p>
 </section>
 <section id="model-performance" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="model-performance"><span class="header-section-number">3.2</span> Model Performance</h2>
@@ -4249,8 +4249,8 @@ Table 2: Classification model comparison for severe-delay-day detection on the 
 <h2 data-number="4.1" class="anchored" data-anchor-id="hypothesis-assessment"><span class="header-section-number">4.1</span> Hypothesis Assessment</h2>
 <p>Using the decision rules in Methods:</p>
 <ol type="1">
-<li><strong>RQ1:</strong> reject H0_1; precipitation is positively associated with delay (<code>beta = {python} round(coef_precip, 3)</code>, <code>p = {python} p_precip:.4f</code>) and heavy-weather mean delay is 1.32x clear-weather delay.</li>
-<li><strong>RQ2:</strong> reject H0_2; weekend coefficient is negative and significant (<code>beta = {python} round(coef_weekend, 3)</code>, <code>p &lt; 0.001</code>), indicating higher weekday expected delay.</li>
+<li><strong>RQ1:</strong> reject H0_1; precipitation is positively associated with delay (beta = 1.149, p = 0.0052) and heavy-weather mean delay is 1.32x clear-weather delay.</li>
+<li><strong>RQ2:</strong> reject H0_2; weekend coefficient is negative and significant (beta = -34.858, p = &lt;0.001), indicating higher weekday expected delay.</li>
 <li><strong>RQ3:</strong> reject H0_3 with modest gain; best RMSE improves by 1.51% over linear baseline.</li>
 <li><strong>RQ4:</strong> reject H0_4 with moderate effect; best ROC-AUC is 0.622, above random ranking (0.5).</li>
 </ol>
