@@ -1,34 +1,33 @@
 # JSC370 Final Project — Weather Impact on TTC Subway Delays
 
-This repository contains the full final project deliverables:
-
-- Quarto website
-- 6-7 page final report (HTML + PDF)
-- 3 interactive visualizations (HW5 requirement)
-- 5-minute presentation slides
-- Reproducible data and modeling pipeline
+This project investigates how weather conditions are associated with day-level TTC subway delays in Toronto (2014-2026), using reproducible data acquisition, modeling, and reporting.
 
 Scope note: the final version excludes the NLP/reddit sentiment component and focuses on weather-driven TTC delay modeling, aligned with midterm rubric feedback.
 
-## Website
+## Project Links
 
-- Repo: https://github.com/xiran-yin/JSC370final
-- GitHub Pages site: https://xiran-yin.github.io/JSC370final/
+- GitHub repository: https://github.com/xiran-yin/JSC370final
+- GitHub Pages website: https://xiran-yin.github.io/JSC370final/
+- Final report (PDF): https://xiran-yin.github.io/JSC370final/report.pdf
+- Interactive visualizations: https://xiran-yin.github.io/JSC370final/viz.html
+- 5-minute presentation video (YouTube): https://youtu.be/sfOBl8uQWwI
 
 ## Data Sources
 
-- Open-Meteo API: https://archive-api.open-meteo.com/v1/archive
-- Toronto Open Data CKAN API package:
+- Open-Meteo archive API: https://archive-api.open-meteo.com/v1/archive
+- Toronto Open Data CKAN API package (`ttc-subway-delay-data`):  
   https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=ttc-subway-delay-data
 
-## Reproducible Build
+## Reproducibility
+
+Run the pipeline and render the site/report from project root:
 
 ```bash
 python3 scripts/final_pipeline.py
 quarto render
 ```
 
-Or run the all-in-one presentation/report pipeline:
+Optional all-in-one script:
 
 ```bash
 ./scripts/presentation_pipeline.sh
@@ -36,14 +35,13 @@ Or run the all-in-one presentation/report pipeline:
 
 ## Repository Structure
 
-- `scripts/final_pipeline.py` — data acquisition, cleaning, feature engineering, modeling, and artifact export
-- `report.qmd` — final written report
-- `viz.qmd` — interactive figures page
+- `scripts/final_pipeline.py` — API pulls, cleaning, feature engineering, modeling, export
+- `index.qmd` — website summary page
+- `report.qmd` — final written report (HTML/PDF)
+- `viz.qmd` — interactive visualizations page
 - `slides.qmd` — presentation deck
-- `data/` — processed analysis datasets
-- `outputs/` — tables, plots, and interactive HTML visualizations
-- `presentation/` — speaker timing guide
+- `data/` — saved analysis-ready datasets (e.g., `processed_daily.csv`)
+- `outputs/` — model tables, static figures, interactive artifacts
+- `_site/` — rendered website files
 
-## Notes
-
-No local absolute paths are required. All files are built from project-relative paths for reproducibility.
+All build steps use project-relative paths. No local absolute paths are required.
