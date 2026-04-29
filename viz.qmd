@@ -6,6 +6,7 @@ format:
 ---
 
 This page contains three interactive visualizations built from the final project dataset, satisfying the Homework 5 requirement.
+Please note that some months in selected years reflect sparse TTC incident-record coverage; these low or missing-looking segments should be interpreted as data-availability limitations rather than literal no-delay conditions.
 
 ## Figure 1: Delay Trend with Precipitation
 
