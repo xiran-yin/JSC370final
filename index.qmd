@@ -1,5 +1,7 @@
 ---
-title: "JSC370 Final Project: Weather and TTC Subway Delays"
+title: |
+  JSC370 Final Project:  
+  How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto?
 format:
   html:
     toc: false

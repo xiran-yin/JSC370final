@@ -1,6 +1,6 @@
 ---
 title: |
-  JSC370 Final Project Report:  
+  JSC370 Final Project:  
   How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto?
 author: "Xiran Yin"
 format:

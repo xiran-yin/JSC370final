@@ -9,7 +9,7 @@ $headings-font-family: "Georgia", "Times New Roman", "Times", serif;
 $headings-color: #474e4f;
 $navbar-bg: #415378;
 $navbar-fg: #e8f7f6;
-$navbar-hl: #ffffff;
+$navbar-hl: rgb(243, 223, 164);
 
 /*-- scss:rules --*/
 body {
@@ -26,6 +26,20 @@ h3 {
 
 .navbar {
   border-bottom: 1px solid #3c5d8d;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus,
+.navbar .navbar-brand:hover,
+.navbar .navbar-brand:focus {
+  color: rgb(243, 223, 164) !important;
+}
+
+.navbar .nav-link.active,
+.navbar .nav-link[aria-current="page"],
+.navbar .navbar-nav .show > .nav-link,
+.navbar .active > .nav-link {
+  color: rgb(248, 230, 177) !important;
 }
 
 .quarto-title-block .quarto-title-banner {
