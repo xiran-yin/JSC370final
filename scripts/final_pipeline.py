@@ -61,8 +61,8 @@ warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid")
 plt.rcParams.update(
     {
-        "font.family": "serif",
-        "font.serif": ["Times New Roman", "Georgia", "DejaVu Serif"],
+        "font.family": "DejaVu Serif",
+        "font.serif": ["DejaVu Serif"],
         "axes.titlesize": 13,
         "axes.labelsize": 11,
     }
@@ -325,7 +325,10 @@ def build_outputs(df: pd.DataFrame) -> None:
         "is_weekend_int",
         "month_num",
     ]
-    model_df = df[features + ["total_delay_mins", "severe_day"]].dropna().copy()
+    model_source = df.loc[df["total_incidents"] > 0].copy()
+    model_df = model_source[features + ["total_delay_mins"]].dropna().copy()
+    severe_threshold = float(model_df["total_delay_mins"].quantile(0.75))
+    model_df["severe_day"] = (model_df["total_delay_mins"] >= severe_threshold).astype(int)
 
     # Regression models
     X_reg = model_df[features]
@@ -498,7 +501,7 @@ def build_outputs(df: pd.DataFrame) -> None:
 
     # Summary table for weather categories
     summary_weather = (
-        df.groupby("weather_type", as_index=False)
+        model_source.groupby("weather_type", as_index=False)
         .agg(
             n_days=("date", "size"),
             mean_delay_mins=("total_delay_mins", "mean"),
@@ -514,14 +517,19 @@ def build_outputs(df: pd.DataFrame) -> None:
     monthly = (
         df.set_index("date")
         .resample("ME")
-        .agg(total_delay_mins=("total_delay_mins", "sum"), precip_mm=("precip_mm", "sum"))
+        .agg(
+            total_delay_mins=("total_delay_mins", "sum"),
+            precip_mm=("precip_mm", "sum"),
+            incident_days=("total_incidents", lambda s: int((s > 0).sum())),
+        )
         .reset_index()
     )
+    monthly["delay_for_plot"] = monthly["total_delay_mins"]
 
     fig, ax1 = plt.subplots(figsize=(11, 4.5))
     ax1.plot(
         monthly["date"],
-        monthly["total_delay_mins"],
+        monthly["delay_for_plot"],
         color=COLORS["navy"],
         linewidth=2.4,
         marker="o",
@@ -548,9 +556,10 @@ def build_outputs(df: pd.DataFrame) -> None:
     fig.savefig(OUTPUT_DIR / "fig1_monthly_delay_precip.png", dpi=240)
     plt.close(fig)
 
+    box_df = df.loc[df["total_incidents"] > 0].copy()
     fig, ax = plt.subplots(figsize=(8, 4.5))
     sns.boxplot(
-        data=df,
+        data=box_df,
         x="weather_type",
         y="total_delay_mins",
         order=["Clear", "Light Rain/Snow", "Heavy Rain/Snow"],
@@ -796,9 +805,10 @@ def build_outputs(df: pd.DataFrame) -> None:
         "n_days": int(len(df)),
         "n_days_with_incidents": int((df["total_incidents"] > 0).sum()),
         "n_zero_incident_days": int((df["total_incidents"] == 0).sum()),
+        "n_model_days": int(len(model_df)),
         "start_date": str(df["date"].min().date()),
         "end_date": str(df["date"].max().date()),
-        "severe_threshold": float(df["total_delay_mins"].quantile(0.75)),
+        "severe_threshold": severe_threshold,
         "best_reg_model": best_reg_model_name,
         "best_reg_rmse": float(reg_metrics.iloc[0]["rmse"]),
         "best_reg_r2": float(reg_metrics.iloc[0]["r2"]),
@@ -817,19 +827,23 @@ def build_outputs(df: pd.DataFrame) -> None:
         "xgb_cls_f1": float(
             cls_metrics.loc[cls_metrics["model"] == "XGBoost Classifier", "f1"].iloc[0]
         ),
-        "precip_delay_corr": float(df[["precip_mm", "total_delay_mins"]].corr().iloc[0, 1]),
-        "severe_rate": float(df["severe_day"].mean()),
+        "precip_delay_corr": float(
+            model_source[["precip_mm", "total_delay_mins"]].corr().iloc[0, 1]
+        ),
+        "severe_rate": float(model_df["severe_day"].mean()),
         "weekday_mean_delay": float(
-            df.loc[df["day_type"] == "Weekday", "total_delay_mins"].mean()
+            model_source.loc[model_source["day_type"] == "Weekday", "total_delay_mins"].mean()
         ),
         "weekend_mean_delay": float(
-            df.loc[df["day_type"] == "Weekend", "total_delay_mins"].mean()
+            model_source.loc[model_source["day_type"] == "Weekend", "total_delay_mins"].mean()
         ),
         "heavy_mean_delay": float(
-            df.loc[df["weather_type"] == "Heavy Rain/Snow", "total_delay_mins"].mean()
+            model_source.loc[
+                model_source["weather_type"] == "Heavy Rain/Snow", "total_delay_mins"
+            ].mean()
         ),
         "clear_mean_delay": float(
-            df.loc[df["weather_type"] == "Clear", "total_delay_mins"].mean()
+            model_source.loc[model_source["weather_type"] == "Clear", "total_delay_mins"].mean()
         ),
     }
     key_numbers["heavy_vs_clear_ratio"] = (
@@ -905,9 +919,25 @@ def main() -> None:
         lambda r: classify_weather(r["precip_mm"], r["snowfall_cm"]), axis=1
     )
     merged["avg_delay_per_incident"] = merged["total_delay_mins"] / merged["total_incidents"].replace(0, np.nan)
-    merged["severe_day"] = (
-        merged["total_delay_mins"] >= merged["total_delay_mins"].quantile(0.75)
-    ).astype(int)
+    incident_delay_threshold = merged.loc[merged["total_incidents"] > 0, "total_delay_mins"].quantile(0.75)
+    merged["severe_day"] = np.where(
+        (merged["total_incidents"] > 0) & (merged["total_delay_mins"] >= incident_delay_threshold),
+        1,
+        0,
+    )
+
+    coverage_by_year = (
+        merged.assign(year=merged["date"].dt.year)
+        .groupby("year", as_index=False)
+        .agg(
+            calendar_days=("date", "size"),
+            incident_days=("total_incidents", lambda s: int((s > 0).sum())),
+        )
+    )
+    coverage_by_year["coverage_pct"] = (
+        coverage_by_year["incident_days"] / coverage_by_year["calendar_days"] * 100
+    )
+    coverage_by_year.to_csv(OUTPUT_DIR / "table_data_coverage_by_year.csv", index=False)
 
     merged.to_csv(DATA_DIR / "processed_daily.csv", index=False)
     # Keep a representative sample of incident-level data for transparency.

@@ -9,7 +9,7 @@ This page contains three interactive visualizations built from the final project
 
 ## Figure 1: Delay Trend with Precipitation
 
-What this shows: a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. Why it is useful: it distinguishes isolated spikes from persistent weather-related delay patterns. How to read it: track the blue daily series, then the orange rolling trend, and compare both against teal precipitation bars on the secondary axis.
+This is a daily time-series of TTC total delay minutes (full calendar days), with a 30-day moving average and daily precipitation overlay. The plot distinguishes isolated spikes from more persistent weather-related delay patterns while preserving the source-coverage structure of the panel. By tracking the blue daily series first, then the orange rolling trend, and finally comparing both against the teal precipitation bars on the secondary axis, you can read short-term shocks and medium-term shifts together.
 
 <iframe src="outputs/viz1_timeseries.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 

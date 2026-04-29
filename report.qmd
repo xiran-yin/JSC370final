@@ -23,6 +23,7 @@ jupyter: python3
 import json
 from pathlib import Path
 import pandas as pd
+import numpy as np
 
 root = Path(".")
 
@@ -31,11 +32,15 @@ tbl_weather = pd.read_csv(root / "outputs" / "table_weather_summary.csv")
 tbl_reg = pd.read_csv(root / "outputs" / "table_regression_metrics.csv")
 tbl_cls = pd.read_csv(root / "outputs" / "table_classification_metrics.csv")
 tbl_imp = pd.read_csv(root / "outputs" / "table_feature_importance_regression.csv")
+tbl_cv = pd.read_csv(root / "outputs" / "table_validation_cv.csv")
+tbl_coverage = pd.read_csv(root / "outputs" / "table_data_coverage_by_year.csv")
+tbl_hyp_terms = pd.read_csv(root / "outputs" / "table_hypothesis_terms.csv")
 key = json.loads((root / "outputs" / "key_numbers.json").read_text(encoding="utf-8"))
 
 n_days = key["n_days"]
 n_days_with_incidents = key.get("n_days_with_incidents", n_days)
 n_zero_incident_days = key.get("n_zero_incident_days", 0)
+n_model_days = key.get("n_model_days", n_days_with_incidents)
 start_date = key["start_date"]
 end_date = key["end_date"]
 severe_threshold = key["severe_threshold"]
@@ -45,11 +50,65 @@ best_reg_r2 = key["best_reg_r2"]
 best_cls_model = key["best_cls_model"]
 best_cls_auc = key["best_cls_auc"]
 best_cls_f1 = key["best_cls_f1"]
+precip_corr = key["precip_delay_corr"]
+weekday_weekend_ratio = key["weekday_mean_delay"] / key["weekend_mean_delay"]
+heavy_clear_ratio = key["heavy_vs_clear_ratio"]
+
+linear_rmse = float(tbl_reg.loc[tbl_reg["model"] == "Linear Regression", "rmse"].iloc[0])
+best_rmse = float(tbl_reg["rmse"].min())
+rmse_gain_pct = (linear_rmse - best_rmse) / linear_rmse * 100
+
+rf_auc = float(tbl_cls.loc[tbl_cls["model"] == "Random Forest Classifier", "roc_auc"].iloc[0])
+logit_auc = float(tbl_cls.loc[tbl_cls["model"] == "Logistic Regression", "roc_auc"].iloc[0])
+
+coef_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "coef"].iloc[0])
+p_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "p_value"].iloc[0])
+coef_weekend = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "is_weekend_int", "coef"].iloc[0])
+p_weekend = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "is_weekend_int", "p_value"].iloc[0])
+
+low_cov_years = tbl_coverage.loc[tbl_coverage["coverage_pct"] < 50, "year"].astype(int).tolist()
+min_cov = float(tbl_coverage["coverage_pct"].min())
+
+cv_reg_rmse = float(
+    tbl_cv.loc[
+        (tbl_cv["task"] == "Regression") & (tbl_cv["model"] == "Random Forest Regressor"),
+        "cv_mean_1",
+    ].iloc[0]
+)
+cv_reg_r2 = float(
+    tbl_cv.loc[
+        (tbl_cv["task"] == "Regression") & (tbl_cv["model"] == "Random Forest Regressor"),
+        "cv_mean_2",
+    ].iloc[0]
+)
+cv_rf_auc = float(
+    tbl_cv.loc[
+        (tbl_cv["task"] == "Classification")
+        & (tbl_cv["model"] == "Random Forest Classifier"),
+        "cv_mean_1",
+    ].iloc[0]
+)
+cv_logit_auc = float(
+    tbl_cv.loc[
+        (tbl_cv["task"] == "Classification")
+        & (tbl_cv["model"] == "Logistic Regression"),
+        "cv_mean_1",
+    ].iloc[0]
+)
 ```
 
 # Introduction
 
-Public transit reliability is a daily quality-of-life issue in Toronto. This project examines how weather conditions are associated with TTC subway delay minutes at the daily level using reproducible data acquisition, feature engineering, regression/classification modeling, and publication-ready outputs.
+Public transit systems play a critical role in urban mobility, but reliability can be affected by environmental conditions, especially adverse weather. Weather disruptions can increase travel-time variability, reduce operating efficiency, and worsen rider experience.
+
+In Toronto, TTC subway reliability is particularly important because the network supports very high daily ridership. This report studies whether precipitation, snowfall, temperature, and day type are systematically associated with higher daily subway delay minutes.
+
+The analysis integrates two public datasets:
+
+1. Open-Meteo daily weather records for Toronto.
+2. TTC incident-level delay records from Toronto Open Data.
+
+The merged panel spans `{python} start_date` to `{python} end_date` (calendar days: `{python} n_days`). Because TTC record availability varies by year, modeling is conducted on days with observed incidents (`{python} n_model_days` days), while full-calendar coverage is retained for data-accounting transparency.
 
 The specific research questions are:
 
@@ -60,31 +119,23 @@ The specific research questions are:
 
 The hypotheses are specified in testable null/alternative form:
 
-1. **RQ1 (Weather severity)**
-   - **H0_1:** Precipitation and weather severity have no association with daily total delay (no difference in expected delay across weather groups).
-   - **H1_1:** Higher precipitation/severity is associated with higher daily total delay.
-2. **RQ2 (Weekday vs weekend)**
-   - **H0_2:** Expected daily delay is the same for weekdays and weekends after controlling for weather features.
-   - **H1_2:** Expected daily delay differs by day type, with higher delay minutes on weekdays.
-3. **RQ3 (Predictor relevance)**
-   - **H0_3:** Weather-engineered predictors do not improve predictive fit relative to a minimal baseline.
-   - **H1_3:** Weather-engineered predictors provide measurable predictive gain.
-4. **RQ4 (Severe-day classification)**
-   - **H0_4:** Classification models do not outperform near-random discrimination for severe-day detection.
-   - **H1_4:** At least one model achieves meaningful discrimination on held-out data (higher ROC-AUC/F1 than baseline).
+1. **RQ1:** H0_1 = no association between precipitation/severity and daily delay; H1_1 = higher precipitation/severity is associated with higher daily delay.
+2. **RQ2:** H0_2 = no weekday/weekend difference after weather controls; H1_2 = weekday and weekend expected delays differ.
+3. **RQ3:** H0_3 = engineered weather predictors do not improve predictive fit over baseline; H1_3 = they improve predictive fit.
+4. **RQ4:** H0_4 = classification does not outperform random severe-day ranking; H1_4 = at least one model yields ROC-AUC above random.
 
 # Methods
 
 ## Model Choice and Rationale
 
-The modeling strategy combines interpretable baselines with non-linear learners:
+RQ1–RQ2 are evaluated with descriptive statistics and regression coefficients, while RQ3–RQ4 use supervised prediction. The model set combines interpretable baselines with non-linear learners:
 
 1. **Linear Regression** and **Logistic Regression** provide transparent baseline relationships for continuous and binary outcomes.
 2. **Decision Tree** models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.
 3. **Random Forest** models reduce single-tree variance and generally improve out-of-sample stability.
 4. **XGBoost** adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.
 
-This structure tests whether non-linear weather effects improve held-out performance relative to linear baselines.
+This structure tests whether added model complexity materially improves held-out accuracy beyond linear baselines.
 
 ## Data Sources
 
@@ -93,7 +144,8 @@ Two data streams were acquired programmatically:
 1. **Weather data (Open-Meteo archive API):** Daily weather records for Toronto (requested range: 2014-01-01 to 2026-03-31), including precipitation, snowfall, temperature, and wind variables.
 2. **TTC subway delay data (Toronto Open Data CKAN API):** Incident-level delay records across multiple historical CSV/XLS/XLSX resources from package `ttc-subway-delay-data`.
 
-All source calls are made inside `scripts/final_pipeline.py`, and output files are regenerated from scratch when the pipeline is rerun.
+All source calls are made inside `scripts/final_pipeline.py`.  
+The weather request extends to 2026-03-31, but the merged analysis ends on 2026-01-31 because TTC incident records currently end there.
 
 ## Data Wrangling and Feature Engineering
 
@@ -115,20 +167,22 @@ Records are filtered to valid numeric delay values and aggregated to daily total
 - `total_incidents` (incident count)
 - `median_incident_delay`
 
-The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is then created over this overlap and merged with weather and TTC daily aggregates. Days with no TTC incident records are explicitly retained and coded as:
+The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is created over this overlap and merged with weather and TTC daily aggregates. Days with no TTC incident records are retained for coverage accounting and coded as:
 
 - `total_delay_mins = 0`
 - `total_incidents = 0`
 - `median_incident_delay = 0`
 
-The final analysis table contains `{python} n_days` calendar days from `{python} start_date` to `{python} end_date`, of which `{python} n_days_with_incidents` have at least one recorded incident and `{python} n_zero_incident_days` have zero recorded incidents.
+The final daily table contains `{python} n_days` calendar days from `{python} start_date` to `{python} end_date`, of which `{python} n_days_with_incidents` have at least one recorded incident and `{python} n_zero_incident_days` have zero recorded incidents. Predictive modeling uses the incident-recorded subset (`{python} n_model_days` days) to avoid treating missing-record periods as true zero-delay operations.
+Coverage is uneven in a subset of years (`{python} low_cov_years`) with a minimum annual coverage of `{python} round(min_cov, 1)`%, which is why year-level coverage diagnostics are reported alongside modeling outputs.
+All regression, classification, and hypothesis-testing results in this report are estimated on incident-recorded days only; zero-filled calendar days are retained for timeline continuity and coverage accounting, not as observed no-delay outcomes.
 
 Engineered predictors include:
 
-- `mean_temp_c` (daily average of max/min temperature)
-- `precip_intensity` (precipitation per active precipitation hour)
+- `mean_temp_c` (daily average of Open-Meteo `temperature_2m_max` and `temperature_2m_min`)
+- `precip_intensity` (Open-Meteo `precipitation_sum / precipitation_hours` when precipitation hours > 0, else 0)
 - `weather_type` (Clear / Light Rain-Snow / Heavy Rain-Snow)
-- `is_weekend_int`
+- `is_weekend_int` (binary day-type feature: weekday = 0, weekend = 1)
 - calendar features (`month_num`, `day_of_week`)
 
 For model training, the numeric feature set is:
@@ -142,17 +196,21 @@ The three-level weather severity variable is constructed with explicit breakpoin
 
 These thresholds operationalize weather intensity in interpretable categories for both descriptive tables and model features.
 
-For reproducibility checks, `data/ttc_incidents_sample.csv` stores a random sample of incident records across the full multi-year window rather than a first-year slice.
+For reproducibility checks, `data/ttc_incidents_sample.csv` stores a random sample of incident records across the full multi-year window (not a first-year-only head).
 
 The classification target is:
 
-- `severe_day = 1` if daily delay is at or above the 75th percentile threshold (`{python} round(severe_threshold, 2)` minutes), else 0.
+- `severe_day = 1` if daily delay is at or above the 75th percentile threshold (`{python} round(severe_threshold, 2)` minutes) among incident-recorded days; else `severe_day = 0`.
 
 The 75th-percentile cutoff is used as a pragmatic high-risk threshold for classification; regression results are reported in parallel to avoid over-reliance on a single binary definition of severity.
 
+## Data Exploration Tools
+
+Exploratory diagnostics were done with Pandas summary tables (coverage/range checks), Seaborn/Matplotlib static plots (distribution and seasonal structure), and Plotly interactive visuals (time-series and weather/day-type comparisons).
+
 ## Modeling Strategy
 
-Two modeling tasks were implemented.
+The modeling workflow maps directly to the research questions: continuous-delay prediction for RQ3 and severe-day classification for RQ4, with shared predictors and identical train/test boundaries for comparability.
 
 ### Regression
 
@@ -162,7 +220,7 @@ Predicting continuous `total_delay_mins` on a 70/30 train-test split:
 - Additional tree models: Decision Tree Regressor, Random Forest Regressor
 - Complex boosted model: XGBoost Regressor
 
-Key hyperparameters were set before final evaluation (e.g., RF `n_estimators=700`, `max_depth=12`; XGBoost `n_estimators=400`, `max_depth=3`, `learning_rate=0.05`).  
+Hyperparameters for tree/boosting models were set by constrained validation-oriented tuning (depth, trees, and learning-rate controls), then fixed for final held-out evaluation (e.g., RF `n_estimators=700`, `max_depth=12`; XGBoost `n_estimators=400`, `max_depth=3`, `learning_rate=0.05`).  
 Metrics: R², RMSE, and MAE on the held-out test set.
 
 ### Classification
@@ -173,31 +231,69 @@ Predicting binary `severe_day` on a stratified 70/30 split:
 - Additional tree models: Decision Tree Classifier, Random Forest Classifier
 - Complex boosted model: XGBoost Classifier
 
-Key hyperparameters were set before final evaluation (e.g., RF `n_estimators=700`, `max_depth=10`; XGBoost `n_estimators=700`, `max_depth=4`, `learning_rate=0.03`, `eval_metric=AUC`).  
+Hyperparameters follow the same validation-first logic (e.g., RF `n_estimators=700`, `max_depth=10`; XGBoost `n_estimators=700`, `max_depth=4`, `learning_rate=0.03`, `eval_metric=AUC`).  
 Metrics: Accuracy, Precision, Recall, F1, ROC-AUC on the held-out test set.  
 Model interpretation includes feature-importance diagnostics.
+Five-fold cross-validation on incident-recorded days was also used as a robustness check: RF regression CV RMSE was `{python} round(cv_reg_rmse, 2)` (CV R² `{python} round(cv_reg_r2, 3)`), and classification CV ROC-AUC was `{python} round(cv_rf_auc, 3)` for RF versus `{python} round(cv_logit_auc, 3)` for logistic regression.
+
+Hypothesis decisions are tied to explicit rules: coefficient sign and `p < 0.05` for RQ1–RQ2, held-out RMSE gain for RQ3, and ROC-AUC above 0.5 for RQ4.
 
 # Results
 
 ## Descriptive Patterns
 
-![Figure 1. Monthly aggregated TTC delay minutes (line) and monthly precipitation totals (bars). The long-run pattern shows repeated co-movement during wetter periods.](outputs/fig1_monthly_delay_precip.png){#fig-monthly width=74%}
-
-Figure 1 shows clear long-run co-movement between precipitation load and monthly delay minutes. While seasonality exists, delay peaks are not purely calendar-driven; they align with high precipitation periods.
-
-![Figure 2. Distribution of daily delay minutes by weather category. Heavy precipitation/snow days have a higher median and wider tail of extreme delays.](outputs/fig2_weather_boxplot.png){#fig-weather-box width=70%}
-
-Figure 2 confirms monotonic separation across weather severity categories: heavier weather conditions correspond to higher median delay and greater spread.
-
 ```{python}
-#| label: tbl-weather
-#| tbl-cap: "Daily delay summary by weather category."
-tbl_weather
+#| label: fig-descriptive
+#| fig-cap: "Figure 1. Monthly trend/precipitation (left) and incident-day weather-category delay distribution (right)."
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+monthly = (
+    daily.set_index("date")
+    .resample("ME")
+    .agg(
+        total_delay_mins=("total_delay_mins", "sum"),
+        precip_mm=("precip_mm", "sum"),
+        incident_days=("total_incidents", lambda s: int((s > 0).sum())),
+    )
+    .reset_index()
+)
+monthly["delay_for_plot"] = monthly["total_delay_mins"]
+box_df = daily.loc[daily["total_incidents"] > 0].copy()
+
+fig, axes = plt.subplots(1, 2, figsize=(10.8, 3.5))
+
+ax1 = axes[0]
+ax1.plot(monthly["date"], monthly["delay_for_plot"], color="#1f4e79", linewidth=2.0)
+ax1.set_xlabel("Month")
+ax1.set_ylabel("Monthly total delay minutes", color="#1f4e79")
+ax1.tick_params(axis="y", labelcolor="#1f4e79")
+ax1.grid(color="#d9e3ef", linewidth=0.8, alpha=0.9)
+
+ax2 = ax1.twinx()
+ax2.bar(monthly["date"], monthly["precip_mm"], width=18, color="#5aa89e", alpha=0.28)
+ax2.set_ylabel("Monthly precipitation (mm)", color="#5aa89e")
+ax2.tick_params(axis="y", labelcolor="#5aa89e")
+
+sns.boxplot(
+    data=box_df,
+    x="weather_type",
+    y="total_delay_mins",
+    order=["Clear", "Light Rain/Snow", "Heavy Rain/Snow"],
+    palette=["#3b82b5", "#5aa89e", "#cf7657"],
+    ax=axes[1],
+)
+axes[1].set_xlabel("Weather category")
+axes[1].set_ylabel("Daily total delay (minutes)")
+axes[1].grid(axis="y", color="#d9e3ef", linewidth=0.8, alpha=0.9)
+fig.tight_layout()
+plt.show()
+plt.close(fig)
 ```
 
-Table 1 quantifies this pattern. Heavy weather days have the highest average and median delay minutes, supporting the first hypothesis.
+Figure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The 2017-2021 low/zero segment is intentionally retained because it reflects sparse incident-record coverage in those source years, not a literal system-wide absence of TTC delays. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average `{python} round(key["heavy_mean_delay"], 1)` minutes versus `{python} round(key["clear_mean_delay"], 1)` minutes on clear days (ratio `{python} round(heavy_clear_ratio, 2)`x), with positive precipitation slope (beta = `{python} round(coef_precip, 3)`, p = `{python} f"{p_precip:.4f}"`).
 
-## Regression Performance
+## Model Performance
 
 ```{python}
 #| label: tbl-reg
@@ -205,37 +301,32 @@ Table 1 quantifies this pattern. Heavy weather days have the highest average and
 tbl_reg.round(4)
 ```
 
-`{python} best_reg_model` is the best-performing regression model on RMSE, with RMSE `{python} round(best_reg_rmse, 2)` and R² `{python} round(best_reg_r2, 3)`.
-
-Feature-importance outputs (website figure/table) emphasize precipitation-related variables, along with wind and temperature.
-
-## Severe-Delay Classification
-
 ```{python}
 #| label: tbl-cls
-#| tbl-cap: "Classification model comparison for severe-delay-day detection."
+#| tbl-cap: "Classification model comparison for severe-delay-day detection on the held-out test set."
 tbl_cls.round(4)
 ```
 
-`{python} best_cls_model` achieves the highest ROC-AUC (`{python} round(best_cls_auc, 3)`) with F1 `{python} round(best_cls_f1, 3)`. Together with Table 3, this indicates usable but moderate severe-day discrimination.
+Table 1 shows that `{python} best_reg_model` has the lowest held-out RMSE (`{python} round(best_reg_rmse, 2)`) with R² `{python} round(best_reg_r2, 3)`. The gain over linear regression is modest (`{python} round(rmse_gain_pct, 2)`% RMSE reduction), so weather features add signal, but daily delay still has substantial unexplained variability. Table 2 shows moderate severe-day discrimination: `{python} best_cls_model` has the top ROC-AUC (`{python} round(best_cls_auc, 3)`), while logistic regression retains comparatively strong recall/F1. Feature-importance outputs are reported in the interactive-visualization artifacts and emphasize precipitation, wind, and temperature predictors.
 
 # Conclusions and Summary
 
-This final analysis provides a reproducible and policy-relevant answer to the weather-delay question. Weather is not only a background condition; it acts as an operational stressor that shifts delay distributions, changes day-type risk patterns, and affects how well severe service days can be identified in advance.
+This analysis shows that weather is a meaningful but not dominant driver of daily TTC subway delay risk. Heavier rain/snow days have higher delay levels than clear days, and weekday delay levels are materially higher than weekend levels even after adjustment. At the same time, model performance indicates that weather variables alone do not fully explain daily delay variation, so operational and network factors likely account for additional risk.
 
-In a broader urban-mobility context, this matters because reliability shocks are unevenly distributed. Riders with fixed schedules, transfer-heavy commutes, or fewer alternatives absorb disproportionate costs when delay risk rises. Weather-conditioned operations planning can therefore be interpreted as a reliability equity tool, not only as a technical forecasting task.
+From a broader urban-infrastructure perspective, the key implication is planning prioritization: weather-aware service management can improve reliability, but practical forecasting should combine weather signals with operational indicators (e.g., incident type, line-level context, and peak-period load) for stronger day-level performance.
 
 ## Hypothesis Assessment
 
-1. **RQ1 / H1_1 supported:** Higher precipitation and heavier weather categories are associated with higher daily delay minutes in both descriptive summaries and model behavior.
-2. **RQ2 / H1_2 supported:** Weekday delay levels remain higher than weekend levels, including within weather-stratified comparisons.
-3. **RQ3 / H1_3 partially supported:** Weather-engineered predictors provide measurable predictive signal, but gains over linear baselines are moderate rather than dramatic in this daily-resolution setting.
-4. **RQ4 / H1_4 supported (with caution):** Severe-day classification performs above near-random discrimination on held-out data, though effect size is modest and should be interpreted as risk ranking support rather than deterministic day-level prediction.
+Using the decision rules in Methods:
+
+1. **RQ1:** reject H0_1; precipitation is positively associated with delay (beta = `{python} round(coef_precip, 3)`, p = `{python} f"{p_precip:.4f}"`) and heavy-weather mean delay is `{python} round(heavy_clear_ratio, 2)`x clear-weather delay.
+2. **RQ2:** reject H0_2; weekend coefficient is negative and significant (beta = `{python} round(coef_weekend, 3)`, p = `{python} "<0.001" if p_weekend < 0.001 else f"{p_weekend:.4f}"`), indicating higher weekday expected delay.
+3. **RQ3:** reject H0_3 with modest gain; best RMSE improves by `{python} round(rmse_gain_pct, 2)`% over linear baseline.
+4. **RQ4:** reject H0_4 with moderate effect; best ROC-AUC is `{python} round(best_cls_auc, 3)`, above random ranking (0.5).
 
 ## Limitations
 
-- Daily aggregation can hide intra-day dynamics (especially rush-hour clustering).
-- Historical TTC files are heterogeneous, so column harmonization is robust but imperfect.
-- Results are predictive/associational rather than causal, and severe-day classification depends on the percentile cutoff.
-
-For interactive exploration of the same dataset, see the **Interactive Visualizations** page on the project website.
+1. TTC data coverage is uneven across years, which affects long-run descriptive continuity.
+2. Daily aggregation masks intra-day structure (peak-hour concentration and line-specific mechanisms).
+3. The severe-day definition is percentile-based (`{python} round(severe_threshold, 1)` min/day) and therefore operationally useful but not a causal threshold.
+4. Findings are associational/predictive, not causal.

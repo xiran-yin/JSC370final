@@ -2,6 +2,7 @@
 title: "JSC370 Final Project"
 subtitle: "Impact of Weather on TTC Subway Delays"
 author: "Xiran Yin"
+jupyter: python3
 format:
   revealjs:
     theme:
@@ -13,7 +14,28 @@ format:
     footer: "JSC370 Final Project | Xiran Yin"
     embed-resources: true
     code-overflow: wrap
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
+
+```{python}
+import json
+from pathlib import Path
+import pandas as pd
+
+root = Path(".")
+key = json.loads((root / "outputs" / "key_numbers.json").read_text(encoding="utf-8"))
+tbl_reg = pd.read_csv(root / "outputs" / "table_regression_metrics.csv")
+tbl_cls = pd.read_csv(root / "outputs" / "table_classification_metrics.csv")
+
+rf_rmse = float(tbl_reg.loc[tbl_reg["model"] == "Random Forest Regressor", "rmse"].iloc[0])
+lin_rmse = float(tbl_reg.loc[tbl_reg["model"] == "Linear Regression", "rmse"].iloc[0])
+rf_auc = float(tbl_cls.loc[tbl_cls["model"] == "Random Forest Classifier", "roc_auc"].iloc[0])
+logit_f1 = float(tbl_cls.loc[tbl_cls["model"] == "Logistic Regression", "f1"].iloc[0])
+rmse_gain_pct = (lin_rmse - rf_rmse) / lin_rmse * 100
+```
 
 # Research Focus
 
@@ -70,7 +92,7 @@ Connect features to operational mechanisms: moisture, wind, and temperature stre
 
 ![](outputs/fig1_monthly_delay_precip.png){width=92%}
 
-Delay burden and precipitation co-move at monthly scale across the study period.
+Delay burden and precipitation co-move at monthly scale; the 2017-2021 low/zero segment reflects sparse incident-record coverage rather than literal zero delays.
 
 ---
 
@@ -84,13 +106,13 @@ Heavy rain/snow days show higher median delay and wider extreme tail.
 
 # Modeling Results
 
-## Regression
-- Baseline: Linear Regression
-- Main model: Random Forest Regressor
+## Regression (held-out)
+- Best RMSE: Random Forest = `{python} round(rf_rmse, 2)`
+- RMSE gain vs Linear: `{python} round(rmse_gain_pct, 2)`%
 
-## Classification
-- Baseline: Logistic Regression
-- Main model: Random Forest Classifier
+## Classification (held-out)
+- Best ROC-AUC: Random Forest = `{python} round(rf_auc, 3)`
+- Best F1: Logistic Regression = `{python} round(logit_f1, 3)`
 
 ![](outputs/fig4_feature_importance.png){width=64%}
 
@@ -109,9 +131,9 @@ Random Forest improves discrimination and keeps balanced detection under class i
 
 # Conclusion
 
-- Weather is a strong and consistent predictor of TTC daily delay burden.
-- Non-linear ML models outperform linear baselines on both tasks.
-- Severe-delay-day prediction is feasible for operational early-warning use.
+- Weather is a meaningful (not dominant) predictor of TTC daily delay burden.
+- Non-linear models improve ranking/discrimination, but effect sizes are moderate.
+- Severe-delay-day prediction is useful for risk prioritization, not deterministic day-level certainty.
 - Interactive visuals and full reproducible pipeline are published on the project website.
 
 ## Thank you

@@ -1,8 +1,8 @@
 feature,importance,importance_model
-is_weekend_int,0.23768353,XGBoost Classifier
-month_num,0.17905731,XGBoost Classifier
-precip_intensity,0.13381264,XGBoost Classifier
-gust_speed,0.11802888,XGBoost Classifier
-snowfall_cm,0.113852605,XGBoost Classifier
-mean_temp_c,0.111126006,XGBoost Classifier
-precip_mm,0.106439054,XGBoost Classifier
+mean_temp_c,0.24576938729408948,Random Forest Classifier
+gust_speed,0.22460353117599835,Random Forest Classifier
+precip_intensity,0.13856644725218678,Random Forest Classifier
+precip_mm,0.1367392655570677,Random Forest Classifier
+month_num,0.10265711838355139,Random Forest Classifier
+is_weekend_int,0.0791465802274206,Random Forest Classifier
+snowfall_cm,0.0725176701096857,Random Forest Classifier
