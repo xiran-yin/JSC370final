@@ -39,6 +39,11 @@ dt_auc = m(tbl_cls, "Decision Tree Classifier", "roc_auc")
 rf_auc = m(tbl_cls, "Random Forest Classifier", "roc_auc")
 xgb_auc = m(tbl_cls, "XGBoost Classifier", "roc_auc")
 
+reg_rank = tbl_reg.sort_values("rmse").reset_index(drop=True)
+cls_rank = tbl_cls.sort_values("roc_auc", ascending=False).reset_index(drop=True)
+reg_order_text = ", ".join([f'{row["model"].replace(" Regressor","").replace(" Regression","")} {row["rmse"]:.2f}' for _, row in reg_rank.iterrows()])
+cls_order_text = ", ".join([f'{row["model"].replace(" Classifier","").replace(" Regression","")} {row["roc_auc"]:.3f}' for _, row in cls_rank.iterrows()])
+
 summary_table = pd.DataFrame(
     {
         "Metric": [
@@ -96,8 +101,8 @@ Weekday average delay minutes are `{python} round(weekday_weekend_ratio, 2)`x we
 
 ::: {.kpi-card}
 ### Model Comparison
-Regression RMSE: Linear `{python} round(lr_rmse, 2)`, Decision Tree `{python} round(dt_rmse, 2)`, Random Forest `{python} round(rf_rmse, 2)`, XGBoost `{python} round(xgb_rmse, 2)`.  
-Classification ROC-AUC: Logistic `{python} round(logit_auc, 3)`, Decision Tree `{python} round(dt_auc, 3)`, Random Forest `{python} round(rf_auc, 3)`, XGBoost `{python} round(xgb_auc, 3)`.
+Regression RMSE (best to worst): `{python} reg_order_text`.  
+Classification ROC-AUC (best to worst): `{python} cls_order_text`.
 :::
 
 ::: {.kpi-card}

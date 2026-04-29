@@ -62,6 +62,11 @@ rmse_gain_pct = (linear_rmse - best_rmse) / linear_rmse * 100
 rf_auc = float(tbl_cls.loc[tbl_cls["model"] == "Random Forest Classifier", "roc_auc"].iloc[0])
 logit_auc = float(tbl_cls.loc[tbl_cls["model"] == "Logistic Regression", "roc_auc"].iloc[0])
 
+reg_rank = tbl_reg.sort_values("rmse").reset_index(drop=True)
+cls_rank = tbl_cls.sort_values("roc_auc", ascending=False).reset_index(drop=True)
+reg_order_text = ", ".join([f'{row["model"]} {row["rmse"]:.2f}' for _, row in reg_rank.iterrows()])
+cls_order_text = ", ".join([f'{row["model"]} {row["roc_auc"]:.3f}' for _, row in cls_rank.iterrows()])
+
 coef_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "coef"].iloc[0])
 p_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "p_value"].iloc[0])
 p_precip_label = "<0.001" if p_precip < 0.001 else f"{p_precip:.4f}"
@@ -262,7 +267,7 @@ monthly = (
 monthly["delay_for_plot"] = monthly["total_delay_mins"]
 box_df = daily.loc[daily["total_incidents"] > 0].copy()
 
-fig, axes = plt.subplots(2, 1, figsize=(10.5, 7.0))
+fig, axes = plt.subplots(2, 1, figsize=(9.5, 5.8))
 
 ax1 = axes[0]
 ax1.plot(monthly["date"], monthly["delay_for_plot"], color="#1f4e79", linewidth=2.0)
@@ -295,12 +300,6 @@ plt.close(fig)
 Figure 1 combines two complementary diagnostics. The top panel shows the monthly trend in total delay minutes with precipitation context, and the bottom panel shows the incident-day delay distribution by weather category. Across 2014-2026, monthly totals are visibly higher in recent years, and the heavy-weather distribution shows both a higher center and a broader upper tail.
 
 ```{python}
-#| label: tbl-weather-summary
-#| tbl-cap: "Weather-category descriptive summary on incident-recorded days."
-tbl_weather.round(2)
-```
-
-```{python}
 #| label: tbl-ols
 #| tbl-cap: "OLS coefficient summary for daily total delay minutes (incident-recorded days)."
 ols_df = daily.loc[
@@ -324,26 +323,53 @@ ols_table = pd.DataFrame(
 )
 ols_table = ols_table[ols_table["term"] != "Intercept"].copy()
 ols_table["p_value"] = ols_table["p_value"].apply(lambda p: "<0.001" if p < 0.001 else f"{p:.4f}")
-ols_table.round(3)
+ols_table_display = ols_table[["term", "coef", "p_value", "ci_95_low", "ci_95_high"]].rename(
+    columns={
+        "term": "term",
+        "coef": "coef",
+        "p_value": "p",
+        "ci_95_low": "ci_low",
+        "ci_95_high": "ci_high",
+    }
+)
+ols_table_display.round(3)
 ```
 
-Taken together, the two tables provide a descriptive-to-model bridge for Figure 1. The weather summary table reports raw group-level patterns (including the heavy-weather mean of `{python} round(key["heavy_mean_delay"], 1)` minutes versus `{python} round(key["clear_mean_delay"], 1)` on clear days). The OLS model is estimated on incident-recorded days with complete covariates (n = `{python} len(ols_df)`) using `total_delay_mins ~ precip_mm + snowfall_cm + mean_temp_c + is_weekend_int`; it suggests positive adjusted associations for both precipitation (beta = `{python} round(coef_precip, 3)`, p `{python} p_precip_label`) and snowfall (beta = `{python} round(coef_snow, 3)`, p `{python} p_snow_label`), while weekend days remain lower than weekdays (beta = `{python} round(coef_weekend, 3)`).
+Figure 1 and the OLS table provide a concise descriptive-to-model bridge. Heavy-weather days average `{python} round(key["heavy_mean_delay"], 1)` minutes versus `{python} round(key["clear_mean_delay"], 1)` on clear days (ratio `{python} round(heavy_clear_ratio, 2)`x). The OLS model, estimated on incident-recorded days (n = `{python} len(ols_df)`), shows positive adjusted associations for precipitation (beta = `{python} round(coef_precip, 3)`, p `{python} p_precip_label`) and snowfall (beta = `{python} round(coef_snow, 3)`, p `{python} p_snow_label`), with lower expected delay on weekends (beta = `{python} round(coef_weekend, 3)`).
 
 ## Model Performance
 
 ```{python}
 #| label: tbl-reg
 #| tbl-cap: "Regression model comparison on the held-out test set."
-tbl_reg.round(4)
+tbl_reg_display = tbl_reg.copy()
+tbl_reg_display["model"] = tbl_reg_display["model"].replace(
+    {
+        "XGBoost Regressor": "XGBoost",
+        "Random Forest Regressor": "Random Forest",
+        "Linear Regression": "Linear",
+        "Decision Tree Regressor": "Decision Tree",
+    }
+)
+tbl_reg_display.round(4)
 ```
 
 ```{python}
 #| label: tbl-cls
 #| tbl-cap: "Classification model comparison for severe-delay-day detection on the held-out test set."
-tbl_cls.round(4)
+tbl_cls_display = tbl_cls.copy()
+tbl_cls_display["model"] = tbl_cls_display["model"].replace(
+    {
+        "Logistic Regression": "Logistic",
+        "Random Forest Classifier": "Random Forest",
+        "XGBoost Classifier": "XGBoost",
+        "Decision Tree Classifier": "Decision Tree",
+    }
+)
+tbl_cls_display.round(4)
 ```
 
-Table 1 shows that `{python} best_reg_model` has the lowest held-out RMSE (`{python} round(best_reg_rmse, 2)`) with R² `{python} round(best_reg_r2, 3)`. The gain over linear regression is modest (`{python} round(rmse_gain_pct, 2)`% RMSE reduction), which indicates that weather variables improve fit but explain only part of day-level delay variation. Table 2 shows moderate severe-day discrimination: `{python} best_cls_model` has the top ROC-AUC (`{python} round(best_cls_auc, 3)`), which is above random (0.5) but still limited. In practical terms, this means severe days are ranked above non-severe days only moderately well. Logistic Regression also has the strongest recall/F1 in this comparison (recall `{python} round(float(tbl_cls.loc[tbl_cls["model"]=="Logistic Regression","recall"].iloc[0]), 3)`, F1 `{python} round(float(tbl_cls.loc[tbl_cls["model"]=="Logistic Regression","f1"].iloc[0]), 3)`), so it captures more severe days at the cost of more false alarms and lower overall accuracy than some tree models. This pattern is consistent with the OLS findings: weather effects are statistically detectable, but prediction remains limited without additional operational features. Feature-importance outputs are reported in the interactive-visualization artifacts and emphasize precipitation, wind, and temperature predictors.
+Table 1 shows that `{python} best_reg_model` has the lowest held-out RMSE (`{python} round(best_reg_rmse, 2)`) with R² `{python} round(best_reg_r2, 3)`. Ranked from best to worst RMSE, the regression models are: `{python} reg_order_text`; the gain over linear regression is modest (`{python} round(rmse_gain_pct, 2)`% RMSE reduction), indicating limited explained variation at day level. Table 2 shows moderate severe-day discrimination: `{python} best_cls_model` has the top ROC-AUC (`{python} round(best_cls_auc, 3)`), and classification models rank as `{python} cls_order_text`. Logistic Regression also has the strongest recall/F1 in this comparison (recall `{python} round(float(tbl_cls.loc[tbl_cls["model"]=="Logistic Regression","recall"].iloc[0]), 3)`, F1 `{python} round(float(tbl_cls.loc[tbl_cls["model"]=="Logistic Regression","f1"].iloc[0]), 3)`), so it captures more severe days at the cost of more false alarms. Feature-importance outputs are reported in the interactive-visualization artifacts and emphasize precipitation, wind, and temperature predictors; an interactive ROC comparison is provided in [Interactive Visualizations](viz.html) Figure 4.
 
 # Conclusions and Summary
 
@@ -351,8 +377,8 @@ Table 1 shows that `{python} best_reg_model` has the lowest held-out RMSE (`{pyt
 
 Using the decision rules in Methods:
 
-RQ1: reject H0_1; precipitation is positively associated with delay (beta = `{python} round(coef_precip, 3)`, p = `{python} p_precip_label`) and heavy-weather mean delay is `{python} round(heavy_clear_ratio, 2)`x clear-weather delay.  
-RQ2: reject H0_2; weekend coefficient is negative and significant (beta = `{python} round(coef_weekend, 3)`, p = `{python} "<0.001" if p_weekend < 0.001 else f"{p_weekend:.4f}"`), indicating higher weekday expected delay.  
+RQ1: reject H0_1; precipitation is positively associated with delay (beta = `{python} round(coef_precip, 3)`, p `{python} p_precip_label`) and heavy-weather mean delay is `{python} round(heavy_clear_ratio, 2)`x clear-weather delay.  
+RQ2: reject H0_2; weekend coefficient is negative and significant (beta = `{python} round(coef_weekend, 3)`, p `{python} "<0.001" if p_weekend < 0.001 else f"= {p_weekend:.4f}"`), indicating higher weekday expected delay.  
 RQ3: reject H0_3 with modest gain; best RMSE improves by `{python} round(rmse_gain_pct, 2)`% over linear baseline.  
 RQ4: reject H0_4 with moderate effect; best ROC-AUC is `{python} round(best_cls_auc, 2)`, above random ranking (0.5).
 
@@ -367,5 +393,4 @@ From a broader urban-infrastructure perspective, the key implication is planning
 1. Open-data resources can be revised over time; rerunning the pipeline on a later snapshot may change historical totals slightly.
 2. Daily aggregation masks intra-day structure (peak-hour concentration and line-specific mechanisms).
 3. The severe-day definition is percentile-based (`{python} round(severe_threshold, 1)` min/day) and therefore operationally useful but not a causal threshold.
-4. The model uses weather and calendar predictors only; unobserved operational factors (e.g., ridership demand, planned service changes, line disruptions) may explain additional variation.
-5. Findings are associational/predictive, not causal.
+4. The model uses weather and calendar predictors only, so unobserved operational factors (e.g., ridership demand, planned service changes, line disruptions) may explain additional variation; findings are therefore associational/predictive rather than causal.
