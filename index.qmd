@@ -126,6 +126,7 @@ Model labels in this table are metric-specific: the best **regression** model is
 - [Read the full final report](report.html)
 - [Download the PDF report](report.pdf)
 - [View interactive visualizations (HW5 requirement)](viz.html)
+- [Watch the 5-minute presentation video (YouTube)](https://youtu.be/sfOBl8uQWwI)
 - [View the 5-minute presentation slides](slides.html)
 - [Project source code on GitHub](https://github.com/xiran-yin/JSC370final)
 
