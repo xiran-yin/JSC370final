@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>JSC370 Final Project: How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto? – JSC370 Final Project</title>
+<title>Weather and TTC Subway Delays in Toronto – JSC370 Final Project</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -3903,7 +3903,7 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title"><p>JSC370 Final Project: How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto?</p></h1>
+<h1 class="title">Weather and TTC Subway Delays in Toronto</h1>
 </div>
 
 
@@ -3928,28 +3928,28 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 <li><strong>Classification models</strong> for identifying high-risk severe-delay days.</li>
 </ul>
 <p>The analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures.</p>
-<p>Note: the visible low/zero delay segment around 2017-2021 reflects sparse incident-record coverage in source files, not a literal period of no TTC delays.</p>
+<p>Coverage note: in the current extract, TTC incident-day coverage is complete across 2014-01-01 to 2026-01-31.</p>
 </section>
 <section id="key-findings" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="key-findings"><span class="header-section-number">2</span> Key Findings</h2>
 <div class="kpi-grid">
 <section id="weather-severity" class="level3 kpi-card" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="weather-severity"><span class="header-section-number">2.1</span> Weather Severity</h3>
-<p>Heavy rain/snow days show about 1.32x the average delay of clear days.<br>
-The precipitation-delay correlation is r = 0.106.</p>
+<p>Heavy rain/snow days show about 1.29x the average delay of clear days.<br>
+The precipitation-delay correlation is r = 0.104.</p>
 </section>
 <section id="day-type-gap" class="level3 kpi-card" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="day-type-gap"><span class="header-section-number">2.2</span> Day-Type Gap</h3>
-<p>Weekday average delay minutes are 1.27x weekend levels.</p>
+<p>Weekday average delay minutes are 1.26x weekend levels.</p>
 </section>
 <section id="model-comparison" class="level3 kpi-card" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="model-comparison"><span class="header-section-number">2.3</span> Model Comparison</h3>
-<p>Regression RMSE: Linear 96.98, Decision Tree 97.34, Random Forest 95.51, XGBoost 95.97.<br>
-Classification ROC-AUC: Logistic 0.609, Decision Tree 0.53, Random Forest 0.622, XGBoost 0.594.</p>
+<p>Regression RMSE: Linear 91.78, Decision Tree 96.06, Random Forest 90.58, XGBoost 90.03.<br>
+Classification ROC-AUC: Logistic 0.58, Decision Tree 0.563, Random Forest 0.567, XGBoost 0.566.</p>
 </section>
 <section id="risk-threshold" class="level3 kpi-card" data-number="2.4">
 <h3 data-number="2.4" class="anchored" data-anchor-id="risk-threshold"><span class="header-section-number">2.4</span> Risk Threshold</h3>
-<p>The severe-day threshold is 193.0 minutes/day (75th percentile), flagging 25.2% of days.</p>
+<p>The severe-day threshold is 180.0 minutes/day (75th percentile), flagging 25.1% of days.</p>
 </section>
 </div>
 </section>
@@ -3988,42 +3988,42 @@ Table 1: Final project summary metrics.
 <tr class="odd">
 <th data-quarto-table-cell-role="th">2</th>
 <td>Days with recorded incidents</td>
-<td>2863</td>
+<td>4414</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">3</th>
 <td>Days with zero recorded incidents</td>
-<td>1551</td>
+<td>0</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">4</th>
 <td>Heavy vs clear delay ratio</td>
-<td>1.32x</td>
+<td>1.29x</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">5</th>
 <td>Precipitation-delay correlation</td>
-<td>r = 0.106</td>
+<td>r = 0.104</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">6</th>
 <td>Best regression model (RMSE)</td>
-<td>Random Forest Regressor (95.51)</td>
+<td>XGBoost Regressor (90.03)</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">7</th>
 <td>Best classification model (ROC-AUC)</td>
-<td>Random Forest Classifier (0.622)</td>
+<td>Logistic Regression (0.580)</td>
 </tr>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">8</th>
 <td>Severe-day threshold</td>
-<td>193.0 min/day (75th percentile)</td>
+<td>180.0 min/day (75th percentile)</td>
 </tr>
 <tr class="even">
 <th data-quarto-table-cell-role="th">9</th>
 <td>Severe-day share</td>
-<td>25.2%</td>
+<td>25.1%</td>
 </tr>
 </tbody>
 </table>
