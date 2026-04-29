@@ -4031,7 +4031,7 @@ The weather request extends to 2026-03-31, but the merged analysis ends on 2026-
 <li><code>total_incidents = 0</code></li>
 <li><code>median_incident_delay = 0</code></li>
 </ul>
-<p>The final daily table contains 4414 calendar days from 2014-01-01 to 2026-01-31, of which 2863 have at least one recorded incident and 1551 have zero recorded incidents. Predictive modeling uses the incident-recorded subset (2863 days) to avoid treating missing-record periods as true zero-delay operations. Coverage is uneven in a subset of years ([2017, 2018, 2019, 2020, 2021]) with a minimum annual coverage of 8.5%, which is why year-level coverage diagnostics are reported alongside modeling outputs.</p>
+<p>The final daily table contains 4414 calendar days from 2014-01-01 to 2026-01-31, of which 2863 have at least one recorded incident and 1551 have zero recorded incidents. Predictive modeling uses the incident-recorded subset (2863 days) to avoid treating missing-record periods as true zero-delay operations. Coverage is uneven in a subset of years ([2017, 2018, 2019, 2020, 2021]) with a minimum annual coverage of 8.5%, which is why year-level coverage diagnostics are reported alongside modeling outputs. All regression, classification, and hypothesis-testing results in this report are estimated on incident-recorded days only; zero-filled calendar days are retained for timeline continuity and coverage accounting, not as observed no-delay outcomes.</p>
 <p>Engineered predictors include:</p>
 <ul>
 <li><code>mean_temp_c</code> (daily average of Open-Meteo <code>temperature_2m_max</code> and <code>temperature_2m_min</code>)</li>
