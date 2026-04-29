@@ -4,5 +4,7 @@ requests
 matplotlib
 seaborn
 scikit-learn
+statsmodels
+xgboost
 plotly
 quarto

@@ -34,6 +34,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+import statsmodels.formula.api as smf
 
 try:
     from xgboost import XGBClassifier, XGBRegressor
@@ -543,6 +544,24 @@ def build_outputs(df: pd.DataFrame) -> None:
         .round(2)
     )
     summary_weather.to_csv(OUTPUT_DIR / "table_weather_summary.csv", index=False)
+
+    # Hypothesis-term table for report text (RQ1/RQ2 coefficient + p-value evidence)
+    hyp_source = model_source[
+        ["total_delay_mins", "precip_mm", "snowfall_cm", "mean_temp_c", "is_weekend_int"]
+    ].dropna()
+    hyp_fit = smf.ols(
+        "total_delay_mins ~ precip_mm + snowfall_cm + mean_temp_c + is_weekend_int",
+        data=hyp_source,
+    ).fit()
+    hyp_terms = pd.DataFrame(
+        {
+            "term": hyp_fit.params.index,
+            "coef": hyp_fit.params.values,
+            "p_value": hyp_fit.pvalues.values,
+        }
+    )
+    hyp_terms = hyp_terms[hyp_terms["term"].isin(["precip_mm", "snowfall_cm", "mean_temp_c", "is_weekend_int"])]
+    hyp_terms.to_csv(OUTPUT_DIR / "table_hypothesis_terms.csv", index=False)
 
     # Static figures for report
     monthly = (
