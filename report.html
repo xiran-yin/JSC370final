@@ -3906,10 +3906,10 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
   <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods"><span class="header-section-number">2</span> Methods</a>
   <ul class="collapse">
-  <li><a href="#model-choice-and-rationale" id="toc-model-choice-and-rationale" class="nav-link" data-scroll-target="#model-choice-and-rationale"><span class="header-section-number">2.1</span> Model Choice and Rationale</a></li>
-  <li><a href="#data-sources" id="toc-data-sources" class="nav-link" data-scroll-target="#data-sources"><span class="header-section-number">2.2</span> Data Sources</a></li>
-  <li><a href="#data-wrangling-and-feature-engineering" id="toc-data-wrangling-and-feature-engineering" class="nav-link" data-scroll-target="#data-wrangling-and-feature-engineering"><span class="header-section-number">2.3</span> Data Wrangling and Feature Engineering</a></li>
-  <li><a href="#data-exploration-tools" id="toc-data-exploration-tools" class="nav-link" data-scroll-target="#data-exploration-tools"><span class="header-section-number">2.4</span> Data Exploration Tools</a></li>
+  <li><a href="#data-sources" id="toc-data-sources" class="nav-link" data-scroll-target="#data-sources"><span class="header-section-number">2.1</span> Data Sources</a></li>
+  <li><a href="#data-wrangling-and-feature-engineering" id="toc-data-wrangling-and-feature-engineering" class="nav-link" data-scroll-target="#data-wrangling-and-feature-engineering"><span class="header-section-number">2.2</span> Data Wrangling and Feature Engineering</a></li>
+  <li><a href="#data-exploration-tools" id="toc-data-exploration-tools" class="nav-link" data-scroll-target="#data-exploration-tools"><span class="header-section-number">2.3</span> Data Exploration Tools</a></li>
+  <li><a href="#model-choice-and-rationale" id="toc-model-choice-and-rationale" class="nav-link" data-scroll-target="#model-choice-and-rationale"><span class="header-section-number">2.4</span> Model Choice and Rationale</a></li>
   <li><a href="#modeling-strategy" id="toc-modeling-strategy" class="nav-link" data-scroll-target="#modeling-strategy"><span class="header-section-number">2.5</span> Modeling Strategy</a>
   <ul class="collapse">
   <li><a href="#regression" id="toc-regression" class="nav-link" data-scroll-target="#regression"><span class="header-section-number">2.5.1</span> Regression</a></li>
@@ -3970,7 +3970,7 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 <p>The specific research questions are:</p>
 <ol type="1">
 <li>How strongly are precipitation and weather severity associated with daily total delay minutes?</li>
-<li>Do weekday and weekend days have different delay levels once weather is accounted for?</li>
+<li>Do delay levels differ between weekdays and weekends after accounting for weather conditions?</li>
 <li>Which engineered weather features are most predictive of daily delay minutes?</li>
 <li>Can we accurately classify whether a day is a <strong>severe delay day</strong> (top quartile of delay minutes)?</li>
 </ol>
@@ -3978,25 +3978,14 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 <ol type="1">
 <li><strong>RQ1:</strong> H0_1 = no association between precipitation/severity and daily delay; H1_1 = higher precipitation/severity is associated with higher daily delay.</li>
 <li><strong>RQ2:</strong> H0_2 = no weekday/weekend difference after weather controls; H1_2 = weekday and weekend expected delays differ.</li>
-<li><strong>RQ3:</strong> H0_3 = engineered weather predictors do not improve predictive fit over baseline; H1_3 = they improve predictive fit.</li>
+<li><strong>RQ3:</strong> H0_3 = engineered weather predictors do not improve predictive fit over baseline; H1_3 = engineered weather predictors improve predictive fit over baseline on the held-out test set.</li>
 <li><strong>RQ4:</strong> H0_4 = classification does not outperform random severe-day ranking; H1_4 = at least one model yields ROC-AUC above random.</li>
 </ol>
 </section>
 <section id="methods" class="level1" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> Methods</h1>
-<section id="model-choice-and-rationale" class="level2" data-number="2.1">
-<h2 data-number="2.1" class="anchored" data-anchor-id="model-choice-and-rationale"><span class="header-section-number">2.1</span> Model Choice and Rationale</h2>
-<p>RQ1–RQ2 are evaluated with descriptive statistics and regression coefficients, while RQ3–RQ4 use supervised prediction. The model set combines interpretable baselines with non-linear learners:</p>
-<ol type="1">
-<li><strong>Linear Regression</strong> and <strong>Logistic Regression</strong> provide transparent baseline relationships for continuous and binary outcomes.</li>
-<li><strong>Decision Tree</strong> models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.</li>
-<li><strong>Random Forest</strong> models reduce single-tree variance and generally improve out-of-sample stability.</li>
-<li><strong>XGBoost</strong> adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.</li>
-</ol>
-<p>This structure tests whether added model complexity materially improves held-out accuracy beyond linear baselines.</p>
-</section>
-<section id="data-sources" class="level2" data-number="2.2">
-<h2 data-number="2.2" class="anchored" data-anchor-id="data-sources"><span class="header-section-number">2.2</span> Data Sources</h2>
+<section id="data-sources" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="data-sources"><span class="header-section-number">2.1</span> Data Sources</h2>
 <p>Two data streams were acquired programmatically:</p>
 <ol type="1">
 <li><strong>Weather data (Open-Meteo archive API):</strong> Daily weather records for Toronto (requested range: 2014-01-01 to 2026-03-31), including precipitation, snowfall, temperature, and wind variables.</li>
@@ -4005,8 +3994,8 @@ var requirejs,require,define;(function(global,setTimeout){var req,s,head,baseEle
 <p>All source calls are made inside <code>scripts/final_pipeline.py</code>.<br>
 The weather request extends to 2026-03-31, but the merged analysis ends on 2026-01-31 because TTC incident records currently end there.</p>
 </section>
-<section id="data-wrangling-and-feature-engineering" class="level2" data-number="2.3">
-<h2 data-number="2.3" class="anchored" data-anchor-id="data-wrangling-and-feature-engineering"><span class="header-section-number">2.3</span> Data Wrangling and Feature Engineering</h2>
+<section id="data-wrangling-and-feature-engineering" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="data-wrangling-and-feature-engineering"><span class="header-section-number">2.2</span> Data Wrangling and Feature Engineering</h2>
 <p>The TTC files use inconsistent column names across years. To address this, the pipeline uses conditional parsing rules:</p>
 <ul>
 <li><strong>Date-column detection:</strong> candidate columns are scored by name pattern (e.g., <code>date</code>, <code>occ date</code>) and empirical parse success rate.</li>
@@ -4055,9 +4044,20 @@ The weather request extends to 2026-03-31, but the merged analysis ends on 2026-
 </ul>
 <p>The 75th-percentile cutoff is used as a pragmatic high-risk threshold for classification; regression results are reported in parallel to avoid over-reliance on a single binary definition of severity.</p>
 </section>
-<section id="data-exploration-tools" class="level2" data-number="2.4">
-<h2 data-number="2.4" class="anchored" data-anchor-id="data-exploration-tools"><span class="header-section-number">2.4</span> Data Exploration Tools</h2>
-<p>Exploratory diagnostics were done with Pandas summary tables (coverage/range checks), Seaborn/Matplotlib static plots (distribution and seasonal structure), and Plotly interactive visuals (time-series and weather/day-type comparisons).</p>
+<section id="data-exploration-tools" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="data-exploration-tools"><span class="header-section-number">2.3</span> Data Exploration Tools</h2>
+<p>Exploratory diagnostics were done with Pandas summary tables (coverage/range checks), Seaborn/Matplotlib static plots (distribution and seasonal structure), and Plotly interactive visuals (time-series and weather/day-type comparisons). The exploratory workflow was refined from the midterm implementation documented in <code>midterm_final_1.qmd</code>, then updated for the final project’s expanded date range and model comparisons.</p>
+</section>
+<section id="model-choice-and-rationale" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="model-choice-and-rationale"><span class="header-section-number">2.4</span> Model Choice and Rationale</h2>
+<p>RQ1–RQ2 are evaluated with descriptive statistics and regression coefficients, while RQ3–RQ4 use supervised prediction. The model set combines interpretable baselines with non-linear learners:</p>
+<ol type="1">
+<li><strong>Linear Regression</strong> and <strong>Logistic Regression</strong> provide transparent baseline relationships for continuous and binary outcomes.</li>
+<li><strong>Decision Tree</strong> models allow threshold-based interactions (e.g., weather cut points) with straightforward interpretability.</li>
+<li><strong>Random Forest</strong> models reduce single-tree variance and generally improve out-of-sample stability.</li>
+<li><strong>XGBoost</strong> adds boosted non-linear capacity for potentially complex interactions between precipitation, temperature, and calendar structure.</li>
+</ol>
+<p>This structure tests whether added model complexity materially improves held-out accuracy beyond linear baselines.</p>
 </section>
 <section id="modeling-strategy" class="level2" data-number="2.5">
 <h2 data-number="2.5" class="anchored" data-anchor-id="modeling-strategy"><span class="header-section-number">2.5</span> Modeling Strategy</h2>
