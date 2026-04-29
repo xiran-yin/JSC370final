@@ -172,13 +172,13 @@
     "href": "viz.html#figure-2-monthly-mean-daily-delay-year-x-month",
     "title": "Interactive Visualizations",
     "section": "2 Figure 2: Monthly Mean Daily Delay (Year x Month)",
-    "text": "2 Figure 2: Monthly Mean Daily Delay (Year x Month)\nWhat this shows: a heatmap of mean daily delay minutes by month and year. Why it is useful: it highlights longer-run seasonal structure and multi-year shifts that are harder to see in raw daily distributions. How to read it: scan darker cells for high-delay month-year combinations, then compare rows (year effects) versus columns (seasonal effects).\n\n\nCaption. Monthly mean daily delay minutes arranged by year and month."
+    "text": "2 Figure 2: Monthly Mean Daily Delay (Year x Month)\nThis is a year-by-month heatmap of mean daily TTC delay minutes. The plot highlights longer-run seasonal structure and multi-year shifts that are difficult to see in the raw day-level series. By scanning darker cells first and then comparing patterns across rows (year effects) and columns (seasonal effects), you can quickly identify when delay intensity was persistently elevated.\n\n\nCaption. Monthly mean daily delay minutes arranged by year and month."
   },
   {
     "objectID": "viz.html#figure-3-weekday-vs-weekend-delay-by-weather-type",
     "href": "viz.html#figure-3-weekday-vs-weekend-delay-by-weather-type",
     "title": "Interactive Visualizations",
     "section": "3 Figure 3: Weekday vs Weekend Delay by Weather Type",
-    "text": "3 Figure 3: Weekday vs Weekend Delay by Weather Type\nWhat this shows: a weekday-versus-weekend boxplot comparison within each weather category, using incident days only. Why it is useful: it isolates day-type differences without the mechanical pile-up of zero-incident days. How to read it: compare medians and interquartile ranges between weekday and weekend boxes within each weather group.\n\n\nCaption. Boxplot comparison of daily delay minutes across weather categories by weekday/weekend (incident days only)."
+    "text": "3 Figure 3: Weekday vs Weekend Delay by Weather Type\nThis is a weekday-versus-weekend boxplot comparison within each weather category, estimated on incident-recorded days. The plot is useful because it separates day-type effects from weather-category effects without conflating missing-record days with true zero-delay outcomes. By comparing medians and interquartile ranges between weekday and weekend boxes inside each weather group, you can assess both average shift and variability differences.\n\n\nCaption. Boxplot comparison of daily delay minutes across weather categories by weekday/weekend (incident days only)."
   }
 ]
