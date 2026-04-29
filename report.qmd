@@ -1,7 +1,5 @@
 ---
-title: |
-  JSC370 Final Project:  
-  How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto?
+title: "How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto?"
 author: "Xiran Yin"
 format:
   html:
@@ -68,7 +66,6 @@ p_precip = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "precip_mm", "p_valu
 coef_weekend = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "is_weekend_int", "coef"].iloc[0])
 p_weekend = float(tbl_hyp_terms.loc[tbl_hyp_terms["term"] == "is_weekend_int", "p_value"].iloc[0])
 
-low_cov_years = tbl_coverage.loc[tbl_coverage["coverage_pct"] < 50, "year"].astype(int).tolist()
 min_cov = float(tbl_coverage["coverage_pct"].min())
 
 cv_reg_rmse = float(
@@ -110,7 +107,7 @@ The analysis integrates two public datasets:
 1. Open-Meteo daily weather records for Toronto.
 2. TTC incident-level delay records from Toronto Open Data.
 
-The merged panel spans `{python} start_date` to `{python} end_date` (calendar days: `{python} n_days`). Because TTC record availability varies by year, modeling is conducted on days with observed incidents (`{python} n_model_days` days), while full-calendar coverage is retained for data-accounting transparency.
+The merged panel spans `{python} start_date` to `{python} end_date` (calendar days: `{python} n_days`). In the current TTC extract, incident records are present on `{python} n_days_with_incidents` of `{python} n_days` calendar days, so the modeling sample and the full date panel coincide.
 
 The specific research questions are:
 
@@ -158,15 +155,14 @@ Records are filtered to valid numeric delay values and aggregated to daily total
 - `total_incidents` (incident count)
 - `median_incident_delay`
 
-The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is created over this overlap and merged with weather and TTC daily aggregates. Days with no TTC incident records are retained for coverage accounting and coded as:
+The final time window is defined by source overlap: weather is requested through 2026-03-31, while TTC records currently extend through 2026-01-31, so the analysis ends on 2026-01-31. A complete daily calendar is created over this overlap and merged with weather and TTC daily aggregates. For reproducibility across future data refreshes, days with no TTC incident records are coded as:
 
 - `total_delay_mins = 0`
 - `total_incidents = 0`
 - `median_incident_delay = 0`
 
-The final daily table contains `{python} n_days` calendar days from `{python} start_date` to `{python} end_date`, of which `{python} n_days_with_incidents` have at least one recorded incident and `{python} n_zero_incident_days` have zero recorded incidents. Predictive modeling uses the incident-recorded subset (`{python} n_model_days` days) to avoid treating missing-record periods as true zero-delay operations.
-Coverage is uneven in a subset of years (`{python} low_cov_years`) with a minimum annual coverage of `{python} round(min_cov, 1)`%, which is why year-level coverage diagnostics are reported alongside modeling outputs.
-All regression, classification, and hypothesis-testing results in this report are estimated on incident-recorded days only; zero-filled calendar days are retained for timeline continuity and coverage accounting, not as observed no-delay outcomes.
+The final daily table contains `{python} n_days` calendar days from `{python} start_date` to `{python} end_date`, of which `{python} n_days_with_incidents` have at least one recorded incident and `{python} n_zero_incident_days` have zero recorded incidents. In this run, annual coverage is complete (`{python} round(min_cov, 1)`% minimum by year), so the incident-recorded subset (`{python} n_model_days` days) equals the full panel.
+All regression, classification, and hypothesis-testing results are still estimated on incident-recorded days by design; with current coverage, this is equivalent to the full date range.
 
 Engineered predictors include:
 
@@ -294,7 +290,7 @@ plt.show()
 plt.close(fig)
 ```
 
-Figure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The 2017-2021 low/zero segment is intentionally retained because it reflects sparse incident-record coverage in those source years, not a literal system-wide absence of TTC delays. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average `{python} round(key["heavy_mean_delay"], 1)` minutes versus `{python} round(key["clear_mean_delay"], 1)` minutes on clear days (ratio `{python} round(heavy_clear_ratio, 2)`x), with positive precipitation slope (beta = `{python} round(coef_precip, 3)`, p = `{python} f"{p_precip:.4f}"`).
+Figure 1 is a two-panel diagnostic: the left panel is the monthly trend view and the right panel is the weather-category distribution view. The monthly panel now shows continuous coverage across the full 2014-2026 window, with visibly higher monthly totals in recent years. The right panel shows a higher center and broader upper tail under heavy weather. Summary statistics are consistent with the plot patterns: heavy weather days average `{python} round(key["heavy_mean_delay"], 1)` minutes versus `{python} round(key["clear_mean_delay"], 1)` minutes on clear days (ratio `{python} round(heavy_clear_ratio, 2)`x), with positive precipitation slope (beta = `{python} round(coef_precip, 3)`, p = `{python} f"{p_precip:.4f}"`).
 
 ## Model Performance
 
@@ -329,7 +325,7 @@ Using the decision rules in Methods:
 
 ## Limitations
 
-1. TTC data coverage is uneven across years, which affects long-run descriptive continuity.
+1. Open-data resources can be revised over time; rerunning the pipeline on a later snapshot may change historical totals slightly.
 2. Daily aggregation masks intra-day structure (peak-hour concentration and line-specific mechanisms).
 3. The severe-day definition is percentile-based (`{python} round(severe_threshold, 1)` min/day) and therefore operationally useful but not a causal threshold.
 4. Findings are associational/predictive, not causal.

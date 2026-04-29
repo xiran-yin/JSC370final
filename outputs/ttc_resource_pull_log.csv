@@ -1,15 +1,15 @@
 resource,status
-ttc-subway-delay-codes,skipped: missing usable date/delay columns
-ttc-subway-delay-data-readme,skipped: missing usable date/delay columns
-ttc-subway-delay-jan-2014-april-2017,"ok (69,014 rows)"
-ttc-subway-delay-may-december-2017,"ok (1,634 rows)"
-ttc-subway-delay-data-2018,"ok (1,873 rows)"
-ttc-subway-delay-data-2019,"ok (1,871 rows)"
-ttc-subway-delay-data-2020,"ok (1,339 rows)"
-ttc-subway-delay-data-2021,"ok (1,216 rows)"
-ttc-subway-delay-data-2022,"ok (19,895 rows)"
-ttc-subway-delay-data-2023,"ok (22,949 rows)"
-ttc-subway-delay-data-2024,"ok (26,465 rows)"
+ttc-subway-delay-codes,skipped: no parseable sheet with date/delay
+ttc-subway-delay-data-readme,skipped: no parseable sheet with date/delay
+ttc-subway-delay-jan-2014-april-2017,"ok (69,014 rows from 1 sheet(s))"
+ttc-subway-delay-may-december-2017,"ok (12,929 rows from 8 sheet(s))"
+ttc-subway-delay-data-2018,"ok (20,737 rows from 12 sheet(s))"
+ttc-subway-delay-data-2019,"ok (19,222 rows from 12 sheet(s))"
+ttc-subway-delay-data-2020,"ok (14,782 rows from 12 sheet(s))"
+ttc-subway-delay-data-2021,"ok (16,370 rows from 12 sheet(s))"
+ttc-subway-delay-data-2022,"ok (19,895 rows from 1 sheet(s))"
+ttc-subway-delay-data-2023,"ok (22,949 rows from 1 sheet(s))"
+ttc-subway-delay-data-2024,"ok (26,465 rows from 1 sheet(s))"
 TTC Subway Delay Data since 2025,"failed: Excel file format cannot be determined, you must specify an engine manually."
 TTC Subway Delay Data since 2025.csv,"ok (28,185 rows)"
 Code Descriptions,"failed: Excel file format cannot be determined, you must specify an engine manually."

@@ -30,11 +30,17 @@ key = json.loads((root / "outputs" / "key_numbers.json").read_text(encoding="utf
 tbl_reg = pd.read_csv(root / "outputs" / "table_regression_metrics.csv")
 tbl_cls = pd.read_csv(root / "outputs" / "table_classification_metrics.csv")
 
-rf_rmse = float(tbl_reg.loc[tbl_reg["model"] == "Random Forest Regressor", "rmse"].iloc[0])
+best_reg_model = str(key["best_reg_model"])
+best_reg_rmse = float(key["best_reg_rmse"])
+best_cls_model = str(key["best_cls_model"])
+best_cls_auc = float(key["best_cls_auc"])
+
 lin_rmse = float(tbl_reg.loc[tbl_reg["model"] == "Linear Regression", "rmse"].iloc[0])
-rf_auc = float(tbl_cls.loc[tbl_cls["model"] == "Random Forest Classifier", "roc_auc"].iloc[0])
+best_f1_idx = tbl_cls["f1"].idxmax()
+best_f1_model = str(tbl_cls.loc[best_f1_idx, "model"])
+best_f1 = float(tbl_cls.loc[best_f1_idx, "f1"])
 logit_f1 = float(tbl_cls.loc[tbl_cls["model"] == "Logistic Regression", "f1"].iloc[0])
-rmse_gain_pct = (lin_rmse - rf_rmse) / lin_rmse * 100
+rmse_gain_pct = (lin_rmse - best_reg_rmse) / lin_rmse * 100
 ```
 
 # Research Focus
@@ -92,7 +98,7 @@ Connect features to operational mechanisms: moisture, wind, and temperature stre
 
 ![](outputs/fig1_monthly_delay_precip.png){width=92%}
 
-Delay burden and precipitation co-move at monthly scale; the 2017-2021 low/zero segment reflects sparse incident-record coverage rather than literal zero delays.
+Delay burden and precipitation co-move at monthly scale, with continuous monthly incident coverage across the analysis window.
 
 ---
 
@@ -107,12 +113,12 @@ Heavy rain/snow days show higher median delay and wider extreme tail.
 # Modeling Results
 
 ## Regression (held-out)
-- Best RMSE: Random Forest = `{python} round(rf_rmse, 2)`
+- Best RMSE: `{python} best_reg_model` = `{python} round(best_reg_rmse, 2)`
 - RMSE gain vs Linear: `{python} round(rmse_gain_pct, 2)`%
 
 ## Classification (held-out)
-- Best ROC-AUC: Random Forest = `{python} round(rf_auc, 3)`
-- Best F1: Logistic Regression = `{python} round(logit_f1, 3)`
+- Best ROC-AUC: `{python} best_cls_model` = `{python} round(best_cls_auc, 3)`
+- Best F1: `{python} best_f1_model` = `{python} round(best_f1, 3)` (Logistic F1 = `{python} round(logit_f1, 3)`)
 
 ![](outputs/fig4_feature_importance.png){width=64%}
 
@@ -125,14 +131,14 @@ Precipitation and weather-stress variables dominate predictive importance.
 ![](outputs/fig5_roc_curve.png){width=62%}
 ![](outputs/fig6_confusion_matrix.png){width=34%}
 
-Random Forest improves discrimination and keeps balanced detection under class imbalance.
+Severe-day discrimination is above random baseline, but remains moderate and operationally oriented.
 
 ---
 
 # Conclusion
 
 - Weather is a meaningful (not dominant) predictor of TTC daily delay burden.
-- Non-linear models improve ranking/discrimination, but effect sizes are moderate.
+- Predictive gains are present but moderate, and classification performance remains limited.
 - Severe-delay-day prediction is useful for risk prioritization, not deterministic day-level certainty.
 - Interactive visuals and full reproducible pipeline are published on the project website.
 

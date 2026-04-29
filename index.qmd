@@ -1,7 +1,5 @@
 ---
-title: |
-  JSC370 Final Project:  
-  How Do Weather Conditions Affect Daily TTC Subway Delays in Toronto?
+title: "Weather and TTC Subway Delays in Toronto"
 format:
   html:
     toc: false
@@ -80,7 +78,7 @@ This project studies how Toronto weather conditions influence TTC subway delay l
 
 The analysis is fully reproducible through a single pipeline script that downloads data, performs feature engineering, trains models, and exports publication-ready tables and figures.
 
-Note: the visible low/zero delay segment around 2017-2021 reflects sparse incident-record coverage in source files, not a literal period of no TTC delays.
+Coverage note: in the current extract, TTC incident-day coverage is complete across 2014-01-01 to 2026-01-31.
 
 ## Key Findings
 

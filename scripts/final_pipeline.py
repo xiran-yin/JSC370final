@@ -145,6 +145,40 @@ def find_optional_col(df: pd.DataFrame, keys: tuple[str, ...]) -> str | None:
     return None
 
 
+def standardize_ttc_frame(df: pd.DataFrame) -> pd.DataFrame | None:
+    date_col = find_date_col(df)
+    delay_col = find_delay_col(df)
+    line_col = find_optional_col(df, ("line",))
+    station_col = find_optional_col(df, ("station", "location", "stop"))
+
+    if not date_col or not delay_col:
+        return None
+
+    keep = [date_col, delay_col]
+    rename_map = {date_col: "date", delay_col: "min_delay"}
+    if line_col and line_col not in keep:
+        keep.append(line_col)
+        rename_map[line_col] = "line"
+    if station_col and station_col not in keep:
+        keep.append(station_col)
+        rename_map[station_col] = "station"
+
+    sub = df[keep].rename(columns=rename_map).copy()
+    sub["date"] = pd.to_datetime(sub["date"], errors="coerce").dt.normalize()
+    sub["min_delay"] = pd.to_numeric(sub["min_delay"], errors="coerce")
+    sub = sub.dropna(subset=["date", "min_delay"])
+    sub = sub[(sub["min_delay"] >= 0) & (sub["min_delay"] <= 600)]
+    if sub.empty:
+        return None
+
+    if "line" in sub.columns:
+        sub["line"] = sub["line"].astype(str).str.strip().replace({"": np.nan, "nan": np.nan})
+    if "station" in sub.columns:
+        sub["station"] = sub["station"].astype(str).str.strip().replace({"": np.nan, "nan": np.nan})
+
+    return sub
+
+
 def classify_weather(precip_mm: float, snowfall_cm: float) -> str:
     if pd.isna(precip_mm):
         return "Unknown"
@@ -225,51 +259,48 @@ def fetch_ttc_incidents() -> tuple[pd.DataFrame, pd.DataFrame]:
         try:
             f = requests.get(url, timeout=90)
             f.raise_for_status()
-
-            if fmt == "CSV":
-                df = pd.read_csv(io.BytesIO(f.content), low_memory=False)
-            else:
-                df = pd.read_excel(io.BytesIO(f.content))
         except Exception as exc:  # noqa: BLE001
             pull_log.append({"resource": name, "status": f"failed: {exc}"})
             continue
 
-        date_col = find_date_col(df)
-        delay_col = find_delay_col(df)
-        line_col = find_optional_col(df, ("line",))
-        station_col = find_optional_col(df, ("station", "location", "stop"))
+        try:
+            if fmt == "CSV":
+                df = pd.read_csv(io.BytesIO(f.content), low_memory=False)
+                sub = standardize_ttc_frame(df)
+                if sub is None:
+                    pull_log.append(
+                        {"resource": name, "status": "skipped: missing usable date/delay columns"}
+                    )
+                    continue
+                records.append(sub)
+                pull_log.append({"resource": name, "status": f"ok ({len(sub):,} rows)"})
+            else:
+                sheet_map = pd.read_excel(io.BytesIO(f.content), sheet_name=None)
+                parsed_sheets = []
+                for _, sheet_df in sheet_map.items():
+                    sub = standardize_ttc_frame(sheet_df)
+                    if sub is not None:
+                        parsed_sheets.append(sub)
 
-        if not date_col or not delay_col:
-            pull_log.append({"resource": name, "status": "skipped: missing usable date/delay columns"})
+                if not parsed_sheets:
+                    pull_log.append(
+                        {"resource": name, "status": "skipped: no parseable sheet with date/delay"}
+                    )
+                    continue
+
+                sub_all = pd.concat(parsed_sheets, ignore_index=True)
+                records.append(sub_all)
+                pull_log.append(
+                    {
+                        "resource": name,
+                        "status": (
+                            f"ok ({len(sub_all):,} rows from {len(parsed_sheets)} sheet(s))"
+                        ),
+                    }
+                )
+        except Exception as exc:  # noqa: BLE001
+            pull_log.append({"resource": name, "status": f"failed: {exc}"})
             continue
-
-        keep = [date_col, delay_col]
-        rename_map = {date_col: "date", delay_col: "min_delay"}
-        if line_col and line_col not in keep:
-            keep.append(line_col)
-            rename_map[line_col] = "line"
-        if station_col and station_col not in keep:
-            keep.append(station_col)
-            rename_map[station_col] = "station"
-
-        sub = df[keep].rename(columns=rename_map).copy()
-        sub["date"] = pd.to_datetime(sub["date"], errors="coerce").dt.normalize()
-        sub["min_delay"] = pd.to_numeric(sub["min_delay"], errors="coerce")
-        sub = sub.dropna(subset=["date", "min_delay"])
-        sub = sub[(sub["min_delay"] >= 0) & (sub["min_delay"] <= 600)]
-        if sub.empty:
-            pull_log.append({"resource": name, "status": "skipped: parsed but empty"})
-            continue
-
-        if "line" in sub.columns:
-            sub["line"] = sub["line"].astype(str).str.strip().replace({"": np.nan, "nan": np.nan})
-        if "station" in sub.columns:
-            sub["station"] = (
-                sub["station"].astype(str).str.strip().replace({"": np.nan, "nan": np.nan})
-            )
-
-        records.append(sub)
-        pull_log.append({"resource": name, "status": f"ok ({len(sub):,} rows)"})
 
     if not records:
         raise RuntimeError("No TTC delay records could be parsed from CKAN resources.")

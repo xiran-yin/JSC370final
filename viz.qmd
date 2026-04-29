@@ -6,11 +6,11 @@ format:
 ---
 
 This page contains three interactive visualizations built from the final project dataset, satisfying the Homework 5 requirement.
-Please note that some months in selected years reflect sparse TTC incident-record coverage; these low or missing-looking segments should be interpreted as data-availability limitations rather than literal no-delay conditions.
+The current data extract has full incident-day coverage across the analysis window (2014-01-01 to 2026-01-31).
 
 ## Figure 1: Delay Trend with Precipitation
 
-This is a daily time-series of TTC total delay minutes (full calendar days), with a 30-day moving average and daily precipitation overlay. The plot distinguishes isolated spikes from more persistent weather-related delay patterns while preserving the source-coverage structure of the panel. By tracking the blue daily series first, then the orange rolling trend, and finally comparing both against the teal precipitation bars on the secondary axis, you can read short-term shocks and medium-term shifts together.
+This is a daily time-series of TTC total delay minutes, with a 30-day moving average and daily precipitation overlay. The plot distinguishes isolated spikes from more persistent weather-related delay patterns. By tracking the blue daily series first, then the orange rolling trend, and finally comparing both against the teal precipitation bars on the secondary axis, you can read short-term shocks and medium-term shifts together.
 
 <iframe src="outputs/viz1_timeseries.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
@@ -26,7 +26,7 @@ This is a year-by-month heatmap of mean daily TTC delay minutes. The plot highli
 
 ## Figure 3: Weekday vs Weekend Delay by Weather Type
 
-This is a weekday-versus-weekend boxplot comparison within each weather category, estimated on incident-recorded days. The plot is useful because it separates day-type effects from weather-category effects without conflating missing-record days with true zero-delay outcomes. By comparing medians and interquartile ranges between weekday and weekend boxes inside each weather group, you can assess both average shift and variability differences.
+This is a weekday-versus-weekend boxplot comparison within each weather category. The plot is useful because it separates day-type effects from weather-category effects in the same weather regime. By comparing medians and interquartile ranges between weekday and weekend boxes inside each weather group, you can assess both average shift and variability differences.
 
 <iframe src="outputs/viz3_boxplot.html" width="100%" height="560" style="border:2px solid #b7cae0; border-radius:6px;"></iframe>
 
